@@ -1,10 +1,10 @@
-# jsonschema-ts
+# simple-jsonschema-ts
 
 A radically simple and lightweight (1kb minified) TypeScript library for defining JSON schemas with static type inference. Nothing more, nothing less. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified.
 
 ## Overview
 
-`jsonschema-ts` allows you to define JSON schemas using a TypeScript API. It provides functions for all standard JSON schema types (`object`, `string`, `number`, `array`, `boolean`) as well as common patterns like `optional` fields, union types (`anyOf`, `oneOf`, and `allOf`), and constants/enums. The `Static` type helper infers the corresponding TypeScript type directly from your schema definition.
+`simple-jsonschema-ts` allows you to define JSON schemas using a TypeScript API. It provides functions for all standard JSON schema types (`object`, `string`, `number`, `array`, `boolean`) as well as common patterns like `optional` fields, union types (`anyOf`, `oneOf`, and `allOf`), and constants/enums. The `Static` type helper infers the corresponding TypeScript type directly from your schema definition.
 
 -  Type-safe JSON schema definition in TypeScript.
 -  Static type inference from schemas using the `Static` helper.
@@ -14,13 +14,13 @@ A radically simple and lightweight (1kb minified) TypeScript library for definin
 ## Installation
 
 ```bash
-npm install jsonschema-ts
+npm install simple-jsonschema-ts
 ```
 
 ## Example
 
 ```ts
-import * as s from "jsonschema-ts";
+import * as s from "simple-jsonschema-ts";
 
 const UserSchema = s.object({
    id: s.number(),
@@ -60,7 +60,7 @@ Below are the primary functions for building schemas:
 Defines a string type. Optional `schema` can include standard JSON schema string constraints like `minLength`, `maxLength`, `pattern`, `format`, etc.
 
 ```ts
-import * as s from "jsonschema-ts";
+import * as s from "simple-jsonschema-ts";
 
 const EmailSchema = s.string({ format: "email" });
 // { type: "string", format: "email" }
@@ -73,7 +73,7 @@ type Email = s.Static<typeof EmailSchema>; // string
 Defines a number type. Optional `schema` can include `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`.
 
 ```ts
-import * as s from "jsonschema-ts";
+import * as s from "simple-jsonschema-ts";
 
 const PositiveNumberSchema = s.number({ minimum: 0 });
 // { type: "number", minimum: 0 }
@@ -86,7 +86,7 @@ type PositiveNumber = s.Static<typeof PositiveNumberSchema>; // number
 Defines an integer type. This is a shorthand for `s.number({ type: "integer", ...props })`.
 
 ```ts
-import * as s from "jsonschema-ts";
+import * as s from "simple-jsonschema-ts";
 
 const IdSchema = s.integer({ minimum: 1 });
 // { type: "integer", minimum: 1 }
@@ -99,7 +99,7 @@ type Id = s.Static<typeof IdSchema>; // number
 Defines a boolean type.
 
 ```ts
-import * as s from "jsonschema-ts";
+import * as s from "simple-jsonschema-ts";
 
 const ActiveSchema = s.boolean();
 // { type: "boolean" }
@@ -112,7 +112,7 @@ type Active = s.Static<typeof ActiveSchema>; // boolean
 Defines an array type where all items must match the `items` schema. Optional `schema` can include `minItems`, `maxItems`, `uniqueItems`.
 
 ```ts
-import * as s from "jsonschema-ts";
+import * as s from "simple-jsonschema-ts";
 
 const TagsSchema = s.array(s.string({ minLength: 1 }), { minItems: 1 });
 // { type: "array", items: { type: "string", minLength: 1 }, minItems: 1 }
@@ -125,7 +125,7 @@ type Tags = s.Static<typeof TagsSchema>; // string[]
 Defines an object type with named `properties`. By default, all properties defined are required. Use `s.optional()` to mark properties as optional. Optional `schema` can include `required`, `additionalProperties`, `minProperties`, `maxProperties`.
 
 ```ts
-import * as s from "jsonschema-ts";
+import * as s from "simple-jsonschema-ts";
 
 const ProductSchema = s.object({
    productId: s.integer(),
@@ -162,7 +162,7 @@ Combine multiple schemas using union keywords:
 -  `allOf(schemas: TSchema[])`: Must match all of the provided schemas.
 
 ```ts
-import * as s from "jsonschema-ts";
+import * as s from "simple-jsonschema-ts";
 
 const StringOrNumberSchema = s.anyOf([s.string(), s.number()]);
 // { anyOf: [ { type: 'string' }, { type: 'number' } ] }
@@ -211,7 +211,7 @@ This validator is designed for environments like Cloudflare Workers and is also 
 
 ```ts
 import { Validator } from "@cfworker/json-schema";
-import * as s from "jsonschema-ts";
+import * as s from "simple-jsonschema-ts";
 
 const validator = new Validator();
 

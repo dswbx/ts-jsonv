@@ -1,7 +1,9 @@
 {
-   "name": "jsonschema-ts",
-   "module": "src/index.ts",
-   "version": "0.1.0",
+   "name": "simple-jsonschema-ts",
+   "main": "dist/index.js",
+   "module": "dist/index.js",
+   "types": "dist/index.d.ts",
+   "version": "0.1.1",
    "publishConfig": {
       "access": "public"
    },
@@ -10,7 +12,8 @@
       "test:unit": "bun test",
       "test:types": "tsc --noEmit",
       "test": "bun test:types && bun test:unit",
-      "build": "tsup"
+      "build": "tsup",
+      "prepublishOnly": "bun test && bun run build"
    },
    "devDependencies": {
       "@cfworker/json-schema": "^4.1.1",
