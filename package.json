@@ -18,6 +18,7 @@
    "devDependencies": {
       "@cfworker/json-schema": "^4.1.1",
       "@types/bun": "latest",
+      "ajv": "^8.17.1",
       "bun-types": "^1.2.9",
       "expect-type": "^1.2.1",
       "tsup": "^8.4.0"
