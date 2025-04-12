@@ -1,0 +1,46 @@
+{
+   "name": "jsonschema-ts",
+   "module": "src/index.ts",
+   "publishConfig": {
+      "access": "public"
+   },
+   "type": "module",
+   "scripts": {
+      "test:unit": "bun test",
+      "test:types": "tsc --noEmit",
+      "test": "bun test:types && bun test:unit",
+      "build": "tsup"
+   },
+   "devDependencies": {
+      "@cfworker/json-schema": "^4.1.1",
+      "@types/bun": "latest",
+      "bun-types": "^1.2.9",
+      "expect-type": "^1.2.1",
+      "tsup": "^8.4.0"
+   },
+   "peerDependencies": {
+      "typescript": "^5.0.0"
+   },
+   "tsup": {
+      "entry": [
+         "src/lib/index.ts"
+      ],
+      "format": "esm",
+      "platform": "neutral",
+      "dts": true,
+      "minify": true,
+      "clean": true,
+      "outDir": "dist"
+   },
+   "files": [
+      "dist",
+      "README.md"
+   ],
+   "keywords": [
+      "json",
+      "schema",
+      "jsonschema",
+      "json-schema",
+      "typescript"
+   ]
+}
