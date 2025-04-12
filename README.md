@@ -14,7 +14,7 @@ A radically simple and lightweight (1kb minified) TypeScript library for definin
 ## Installation
 
 ```bash
-bun add jsonschema-ts # Or npm install / yarn add
+npm install jsonschema-ts
 ```
 
 ## Example
