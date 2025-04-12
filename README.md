@@ -51,82 +51,103 @@ const user: User = {
 // const invalidUser: User = { id: 'abc', username: 'jd' }; // Type error
 ```
 
+## Motivation
+
+If you validate schemas only within the same code base and need comprehensive functionality, you might be better off choosing another library such as zod, TypeBox, etc.
+
+But if you need controllable and predictable schema validation, this library is for you. I was frustrated about the lack of adherence to the JSON schema specification in other libraries, so I decided to create this library. Furthermore, most of the other libraries may reduce your IDE performance due to the sheer number of features they provide.
+
+JSON Schema is simple, elegant and well-defined, so why not use it directly?
+
 ## API Reference
 
 Below are the primary functions for building schemas:
 
-### `string(schema?: StringSchema)`
+### Strings
 
 Defines a string type. Optional `schema` can include standard JSON schema string constraints like `minLength`, `maxLength`, `pattern`, `format`, etc.
 
 ```ts
-import * as s from "simple-jsonschema-ts";
-
 const EmailSchema = s.string({ format: "email" });
 // { type: "string", format: "email" }
 
 type Email = s.Static<typeof EmailSchema>; // string
 ```
 
-### `number(schema?: NumberSchema)`
+To define an Enum, you can add the `enum` property to the schema. It'll be inferred correctly.
+
+```ts
+const ColorSchema = s.string({ enum: ["red", "green", "blue"] });
+// { type: "string", enum: [ "red", "green", "blue" ] }
+
+type Color = s.Static<typeof ColorSchema>; // "red" | "green" | "blue"
+```
+
+The same applies to Constants:
+
+```ts
+const StatusSchema = s.string({ const: "active" });
+// { type: "string", const: "active" }
+
+type Status = s.Static<typeof StatusSchema>; // "active"
+```
+
+### Numbers
 
 Defines a number type. Optional `schema` can include `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`.
 
 ```ts
-import * as s from "simple-jsonschema-ts";
-
 const PositiveNumberSchema = s.number({ minimum: 0 });
 // { type: "number", minimum: 0 }
 
 type PositiveNumber = s.Static<typeof PositiveNumberSchema>; // number
 ```
 
-### `integer(schema?: NumberSchema)`
+Just like with Strings, you can use Enums and Constants with Numbers:
+
+```ts
+const AgeSchema = s.number({ enum: [18, 21, 25] });
+// { type: "number", enum: [ 18, 21, 25 ] }
+
+type Age = s.Static<typeof AgeSchema>; // 18 | 21 | 25
+
+const StatusSchema = s.number({ const: 200 });
+// { type: "number", const: 200 }
+
+type Status = s.Static<typeof StatusSchema>; // 200
+```
+
+### Integers
 
 Defines an integer type. This is a shorthand for `s.number({ type: "integer", ...props })`.
 
-```ts
-import * as s from "simple-jsonschema-ts";
-
-const IdSchema = s.integer({ minimum: 1 });
-// { type: "integer", minimum: 1 }
-
-type Id = s.Static<typeof IdSchema>; // number
-```
-
-### `boolean(schema?: BooleanSchema)`
+### Booleans
 
 Defines a boolean type.
 
 ```ts
-import * as s from "simple-jsonschema-ts";
-
 const ActiveSchema = s.boolean();
 // { type: "boolean" }
 
 type Active = s.Static<typeof ActiveSchema>; // boolean
 ```
 
-### `array(items: TSchema, schema?: ArraySchema)`
+### Arrays
 
 Defines an array type where all items must match the `items` schema. Optional `schema` can include `minItems`, `maxItems`, `uniqueItems`.
 
 ```ts
-import * as s from "simple-jsonschema-ts";
-
 const TagsSchema = s.array(s.string({ minLength: 1 }), { minItems: 1 });
 // { type: "array", items: { type: "string", minLength: 1 }, minItems: 1 }
 
 type Tags = s.Static<typeof TagsSchema>; // string[]
 ```
 
-### `object(properties: Record<string, TSchema>, schema?: ObjectSchema)`
+### Objects
 
 Defines an object type with named `properties`. By default, all properties defined are required. Use `s.optional()` to mark properties as optional. Optional `schema` can include `required`, `additionalProperties`, `minProperties`, `maxProperties`.
 
 ```ts
-import * as s from "simple-jsonschema-ts";
-
 const ProductSchema = s.object({
    productId: s.integer(),
    name: s.string(),
@@ -153,7 +174,51 @@ type Product = s.Static<typeof ProductSchema>;
 // }
 ```
 
-### Unions (`anyOf`, `oneOf`, `allOf`)
+You may also use the `s.strictObject()` function to create a strict object schema which sets `additionalProperties` to `false`.
+
+```ts
+const UserSchema = s.strictObject({
+   id: s.integer(),
+   username: s.optional(s.string()),
+});
+// {
+//   type: "object",
+//   properties: {
+//     id: { type: "integer" },
+//     username: { type: "string" }
+//   },
+//   required: ["id"],
+//   additionalProperties: false,
+// }
+
+// it's equivalent to:
+const UserSchema = s.object(
+   {
+      id: s.integer(),
+      username: s.optional(s.string()),
+   },
+   {
+      additionalProperties: false,
+   }
+);
+```
+
+Or for records, use `s.record()`.
+
+```ts
+const UserSchema = s.record(s.string());
+// {
+//   type: "object",
+//   additionalProperties: {
+//     type: "string"
+//   }
+// }
+
+type User = s.Static<typeof UserSchema>;
+// { [key: string]: string }
+```
+
+### Unions
 
 Combine multiple schemas using union keywords:
 
