@@ -4,10 +4,16 @@
    "module": "dist/index.js",
    "types": "dist/index.d.ts",
    "version": "0.1.1",
+   "description": "A radically simple and lightweight (1kb minified) TypeScript library for defining JSON schemas with static type inference. Nothing more, nothing less.",
+   "repository": {
+      "type": "git",
+      "url": "https://github.com/sinclairzx81/typebox"
+   },
    "publishConfig": {
       "access": "public"
    },
    "type": "module",
+   "license": "MIT",
    "scripts": {
       "test:unit": "bun test",
       "test:types": "tsc --noEmit",
