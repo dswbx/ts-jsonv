@@ -102,3 +102,14 @@ export const any = (): TAny => {
       [$kind]: "any",
    } as any;
 };
+
+function validate(this: ObjectSchema, value: unknown): string | void {
+   if (typeof value !== "object" || value === null) {
+      return "type";
+   }
+
+   if (this.properties) {
+      for (const [key, property] of Object.entries(this.properties)) {
+      }
+   }
+}

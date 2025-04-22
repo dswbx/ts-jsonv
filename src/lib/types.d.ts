@@ -18,6 +18,8 @@ export type BaseJSONSchema = {
    title?: string;
    description?: string;
    default?: any;
+   readOnly?: boolean;
+   writeOnly?: boolean;
 
    // Definitions
    definitions?: { [key in PropertyName]: JSONSchemaDefinition };
@@ -41,6 +43,7 @@ export type NumberSchema = BaseJSONSchema & {
    maximum?: number;
    exclusiveMaximum?: number;
    minimum?: number;
+   exclusiveMinimum?: number;
 };
 
 export type BooleanSchema = BaseJSONSchema & {
