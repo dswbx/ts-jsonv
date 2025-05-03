@@ -58,3 +58,5 @@ export const allOf = <const T extends TSchema[], S extends UnionSchema>(
       allOf: schemas,
    } as any);
 };
+
+// @todo: validate

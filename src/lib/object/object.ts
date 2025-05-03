@@ -139,8 +139,6 @@ function validate(this: ObjectSchema, value: unknown): string | void {
    // @todo: patternProperties
    // @todo: minProperties
    // @todo: maxProperties
-   // @todo: dependentRequired
-   // @todo: dependentSchemas
 }
 
 function template(this: ObjectSchema, opts: TSchemaTemplateOptions = {}) {

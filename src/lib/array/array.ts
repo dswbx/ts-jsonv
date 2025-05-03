@@ -60,4 +60,13 @@ function validate(this: ArraySchema, value: unknown): string | void {
          }
       }
    }
+
+   // @todo: uniqueItems
+   // @todo: contains
+   // @todo: minContains
+   // @todo: maxContains
+   // @todo: minProperties
+   // @todo: maxProperties
+   // @todo: patternProperties
+   // @todo: dependentSchemas
 }

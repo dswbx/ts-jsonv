@@ -35,14 +35,6 @@ function validate(this: StringSchema, value: unknown): string | void {
       return "type";
    }
 
-   if (this.const !== undefined && this.const !== value) {
-      return "const";
-   }
-
-   if (this.enum && !this.enum.includes(value)) {
-      return "enum";
-   }
-
    if (this.pattern) {
       const match = this.pattern.match(/^\/(.+)\/([gimuy]*)$/);
       const [, p, f] = match || [null, this.pattern, ""];
@@ -58,4 +50,8 @@ function validate(this: StringSchema, value: unknown): string | void {
    if (this.maxLength !== undefined && value.length > this.maxLength) {
       return "maxLength";
    }
+
+   // @todo: format
+   // @todo: contentMediaType
+   // @todo: contentEncoding
 }

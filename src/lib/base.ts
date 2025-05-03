@@ -75,6 +75,15 @@ export function create<S extends TSchema>(
       validate: function (this: S, value: unknown) {
          if (this.const !== undefined && this.const !== value) return "const";
          if (this.enum && !this.enum.includes(value)) return "enum";
+
+         // @todo: readOnly
+         // @todo: dependentRequired
+         // @todo: dependentSchemas
+         // @todo: if
+         // @todo: then
+         // @todo: else
+         // @todo: not
+
          if (schema.validate) return schema.validate(value);
          return "not implemented";
       },
