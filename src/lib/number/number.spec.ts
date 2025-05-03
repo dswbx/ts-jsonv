@@ -1,7 +1,7 @@
 import { expectTypeOf } from "expect-type";
 import { $kind, type Static, type TSchema } from "../base";
 import { number } from "./number";
-import { assertJson, assertSchema } from "../assert";
+import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
 
 describe("number", () => {
@@ -10,10 +10,6 @@ describe("number", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<number>();
 
-      assertSchema(number(), {
-         type: "number",
-         [$kind]: "number",
-      });
       assertJson(number(), { type: "number" });
    });
 
@@ -109,5 +105,16 @@ describe("number", () => {
          expect(schema.validate(1)).toEqual("exclusiveMinimum");
          expect(schema.validate(2)).toBeUndefined();
       });
+   });
+
+   test("template", () => {
+      expect(number().template()).toEqual(0);
+      expect(number({ minimum: 1 }).template()).toEqual(1);
+      expect(number({ exclusiveMinimum: 1 }).template()).toEqual(2);
+      expect(number({ exclusiveMinimum: 1, multipleOf: 2 }).template()).toEqual(
+         2
+      );
+      expect(number({ default: 1 }).template()).toEqual(1);
+      expect(number({ const: 1 }).template()).toEqual(1);
    });
 });

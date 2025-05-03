@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { $kind, $optional, optional, type Static, type TSchema } from "../base";
+import { optional, type Static } from "../base";
 import { array } from "./array";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -23,11 +23,6 @@ describe("array", () => {
          expectTypeOf<Inferred>().toEqualTypeOf<("hello" | "world")[]>();
       }
 
-      expect<any>(array(string())).toEqual({
-         type: "array",
-         items: { type: "string", [$kind]: "string" },
-         [$kind]: "array",
-      });
       assertJson(array(string()), {
          type: "array",
          items: { type: "string" },
@@ -51,11 +46,6 @@ describe("array", () => {
          expectTypeOf<Inferred>().toEqualTypeOf<(1 | 2 | 3)[]>();
       }
 
-      expect<any>(array(number())).toEqual({
-         type: "array",
-         items: { type: "number", [$kind]: "number" },
-         [$kind]: "array",
-      });
       assertJson(array(number()), {
          type: "array",
          items: { type: "number" },
@@ -69,24 +59,6 @@ describe("array", () => {
          { name?: string; age: number }[]
       >();
 
-      expect<any>(schema).toEqual({
-         type: "array",
-         [$kind]: "array",
-         items: {
-            type: "object",
-            [$kind]: "object",
-            properties: {
-               name: {
-                  type: "string",
-                  [$kind]: "string",
-                  [$optional]: true,
-               },
-               age: { type: "number", [$kind]: "number" },
-            },
-            required: ["age"],
-         },
-      });
-
       assertJson(schema, {
          type: "array",
          items: {
@@ -95,5 +67,29 @@ describe("array", () => {
             required: ["age"],
          },
       });
+   });
+
+   describe("validate", () => {
+      test("base", () => {
+         const schema = array(string());
+         expect(schema.validate({})).toEqual("type");
+      });
+
+      test("minItems", () => {
+         const schema = array(string(), { minItems: 2 });
+         expect(schema.validate(["a"])).toEqual("minItems");
+         expect(schema.validate(["a", "b"])).toBeUndefined();
+      });
+
+      test("maxItems", () => {
+         const schema = array(string(), { maxItems: 2 });
+         expect(schema.validate(["a", "b", "c"])).toEqual("maxItems");
+         expect(schema.validate(["a", "b"])).toBeUndefined();
+      });
+   });
+
+   test("template", () => {
+      const schema = array(string());
+      expect(schema.template()).toEqual([]);
    });
 });

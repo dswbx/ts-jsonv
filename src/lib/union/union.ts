@@ -1,4 +1,4 @@
-import { $kind, type TSchema, type Static, type Merge } from "../base";
+import { $kind, type TSchema, type Static, type Merge, create } from "../base";
 import type { BaseJSONSchema } from "../types";
 
 type StaticUnion<T extends TSchema[]> = T extends [infer U, ...infer Rest]
@@ -10,8 +10,7 @@ type StaticUnion<T extends TSchema[]> = T extends [infer U, ...infer Rest]
    : never;
 
 export interface TUnion<T extends TSchema[], Kind extends "anyOf" | "oneOf">
-   extends TSchema {
-   [$kind]: Kind;
+   extends TSchema<Kind> {
    static: StaticUnion<T>;
 }
 
@@ -21,22 +20,20 @@ export const anyOf = <const T extends TSchema[], S extends UnionSchema>(
    schemas: T,
    schema?: S
 ): TUnion<T, "anyOf"> => {
-   return {
-      [$kind]: "anyOf",
+   return create<TUnion<T, "anyOf">>("anyOf", {
       ...schema,
       anyOf: schemas,
-   } as any;
+   } as any);
 };
 
 export const oneOf = <const T extends TSchema[], S extends UnionSchema>(
    schemas: T,
    schema?: S
 ): TUnion<T, "oneOf"> => {
-   return {
-      [$kind]: "oneOf",
+   return create<TUnion<T, "oneOf">>("oneOf", {
       ...schema,
       oneOf: schemas,
-   } as any;
+   } as any);
 };
 
 type StaticUnionAllOf<T extends TSchema[]> = T extends [infer U, ...infer Rest]
@@ -47,9 +44,7 @@ type StaticUnionAllOf<T extends TSchema[]> = T extends [infer U, ...infer Rest]
       : never
    : {};
 
-export interface TUnionAllOf<T extends TSchema[]> extends TSchema {
-   type: "union";
-   [$kind]: "union";
+export interface TUnionAllOf<T extends TSchema[]> extends TSchema<"union"> {
    static: StaticUnionAllOf<T>;
 }
 
@@ -58,9 +53,8 @@ export const allOf = <const T extends TSchema[], S extends UnionSchema>(
    schemas: T,
    schema?: S
 ): TUnionAllOf<T> => {
-   return {
-      [$kind]: "allOf",
+   return create<TUnionAllOf<T>>("allOf", {
       ...schema,
       allOf: schemas,
-   } as any;
+   } as any);
 };

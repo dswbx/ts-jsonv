@@ -10,12 +10,6 @@ describe("object", () => {
       const schema = object({});
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{}>();
-
-      expect<any>(object({})).toEqual({
-         type: "object",
-         properties: {},
-         [$kind]: "object",
-      });
       assertJson(object({}), { type: "object", properties: {} });
    });
 
@@ -26,16 +20,6 @@ describe("object", () => {
       });
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{ name: string; age?: number }>();
-
-      expect<any>(schema).toEqual({
-         type: "object",
-         properties: {
-            name: { type: "string", [$kind]: "string" },
-            age: { type: "number", [$kind]: "number", [$optional]: true },
-         },
-         required: ["name"],
-         [$kind]: "object",
-      });
 
       assertJson(schema, {
          type: "object",
@@ -92,16 +76,6 @@ describe("object", () => {
 
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{ name?: string; age?: number }>();
-
-      expect<any>(schema).toEqual({
-         type: "object",
-         properties: {
-            name: { type: "string", [$kind]: "string" },
-            age: { type: "number", [$kind]: "number", [$optional]: true },
-         },
-         required: undefined,
-         [$kind]: "object",
-      });
       assertJson(schema, {
          type: "object",
          properties: {
@@ -117,7 +91,7 @@ describe("object", () => {
       const schema2 = object({ number: optional(number()) });
 
       // expect properties to be accessible
-      expect(schema1.properties.string).toEqual(string());
+      expect(schema1.properties.string[$kind]).toEqual("string");
 
       const merged = object({
          ...schema1.properties,
@@ -125,13 +99,11 @@ describe("object", () => {
       });
 
       expect(Object.keys(merged.properties)).toEqual(["string", "number"]);
-
-      expect<any>(merged).toEqual({
+      assertJson(merged, {
          type: "object",
-         [$kind]: "object",
          properties: {
-            string: { type: "string", [$kind]: "string" },
-            number: { type: "number", [$kind]: "number", [$optional]: true },
+            string: { type: "string" },
+            number: { type: "number" },
          },
          required: ["string"],
       });
@@ -142,10 +114,35 @@ describe("object", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<any>();
 
-      expect<any>(schema).toEqual({
-         [$kind]: "any",
-      });
+      expect<any>(schema[$kind]).toEqual("any");
 
       assertJson(schema, {});
+   });
+
+   describe("validate", () => {
+      test("base", () => {
+         const schema = object({});
+         expect(schema.validate({})).toBeUndefined();
+         expect(schema.validate(1)).toEqual("type");
+      });
+
+      test("properties", () => {
+         const schema = object({
+            name: string(),
+            age: number(),
+         });
+         expect(schema.validate({ name: "John", age: 30 })).toBeUndefined();
+         expect(schema.validate({ name: "John" })).toEqual("required.age");
+         expect(schema.validate({ name: "John", age: "30" })).toEqual("type");
+         expect(schema.validate({})).toEqual("required.name");
+      });
+
+      test("template", () => {
+         const schema = object({
+            name: string(),
+            surname: optional(string()),
+         });
+         expect(schema.template()).toEqual({ name: "" });
+      });
    });
 });

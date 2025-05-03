@@ -5,8 +5,7 @@ export type JSONSchemaTypeName =
    | "boolean"
    | "object"
    | "array"
-   | "null"
-   | string;
+   | "null";
 
 export type JSONSchemaDefinition = JSONSchema | boolean;
 export type PropertyName = string;

@@ -1,13 +1,19 @@
 import type { BaseJSONSchema } from "./types";
 
 export const $kind = Symbol.for("kind");
+export const $fn = Symbol.for("fn");
 export const $optional = Symbol.for("optional");
 
-export interface TSchema extends BaseJSONSchema {
-   [$kind]: string;
+export type TSchemaTemplateOptions = {
+   withOptional?: boolean;
+};
+
+export interface TSchema<Kind extends string = string> extends BaseJSONSchema {
+   [$kind]: Kind;
    $id?: string;
    static: unknown;
    validate: (value: unknown) => void | string;
+   template: (opts?: TSchemaTemplateOptions) => unknown;
 }
 // from https://github.com/type-challenges/type-challenges/issues/28200
 export type Merge<T> = {
@@ -59,3 +65,25 @@ export type StaticConstEnum<
       ? E[number]
       : Fallback
    : Fallback;
+
+export function create<S extends TSchema>(
+   kind: string,
+   schema: Partial<S> = {}
+): S {
+   return {
+      ...schema,
+      validate: function (this: S, value: unknown) {
+         if (this.const !== undefined && this.const !== value) return "const";
+         if (this.enum && !this.enum.includes(value)) return "enum";
+         if (schema.validate) return schema.validate(value);
+         return "not implemented";
+      },
+      template: function (this: S, opts: TSchemaTemplateOptions = {}) {
+         if (this.default !== undefined) return this.default;
+         if (this.const !== undefined) return this.const;
+         if (schema.template) return schema.template(opts);
+         return undefined;
+      },
+      [$kind]: kind,
+   } as any;
+}

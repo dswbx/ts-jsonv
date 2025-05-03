@@ -1,45 +1,31 @@
-import { $kind, type StaticConstEnum, type TSchema } from "../base";
+import { $kind, type StaticConstEnum, type TSchema, create } from "../base";
 import type { NumberSchema } from "../types";
 
-export interface TNumber<S extends NumberSchema> extends TSchema, NumberSchema {
-   [$kind]: "number";
+export interface TNumber<S extends NumberSchema>
+   extends TSchema<"number">,
+      NumberSchema {
    static: StaticConstEnum<S, number>;
-   type: "number";
 }
 
-export const number = <const S extends NumberSchema>(
-   schema?: S
-): TNumber<S> => {
-   return {
+export const number = <const S extends NumberSchema>(schema?: S) =>
+   create<TNumber<S>>("number", {
+      ...schema,
       type: "number",
-      [$kind]: "number",
-      ...schema,
       validate,
-   } as any;
-};
+      template,
+   });
 
-export const integer = <const S extends NumberSchema>(
-   schema?: S
-): TNumber<S> => {
-   return {
-      type: "integer",
-      [$kind]: "integer",
+export const integer = <const S extends NumberSchema>(schema?: S) =>
+   create<TNumber<S>>("integer", {
       ...schema,
+      type: "integer",
       validate,
-   } as any;
-};
+      template,
+   });
 
 function validate(this: NumberSchema, value: unknown): string | void {
    if (typeof value !== "number") {
       return "type";
-   }
-
-   if (this.const !== undefined && this.const !== value) {
-      return "const";
-   }
-
-   if (this.enum && !this.enum.includes(value)) {
-      return "enum";
    }
 
    if (this.multipleOf !== undefined && value % this.multipleOf !== 0) {
@@ -61,4 +47,19 @@ function validate(this: NumberSchema, value: unknown): string | void {
    if (this.exclusiveMinimum !== undefined && value <= this.exclusiveMinimum) {
       return "exclusiveMinimum";
    }
+}
+
+function template(this: NumberSchema) {
+   if (this.minimum) return this.minimum;
+   if (this.exclusiveMinimum) {
+      if (this.multipleOf) {
+         let result = this.exclusiveMinimum;
+         while (result % this.multipleOf !== 0) {
+            result++;
+         }
+         return result;
+      }
+      return this.exclusiveMinimum + 1;
+   }
+   return 0;
 }

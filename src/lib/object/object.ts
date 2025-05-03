@@ -1,4 +1,11 @@
-import { $kind, $optional, type Static, type TSchema } from "../base";
+import {
+   $kind,
+   $optional,
+   type Static,
+   type TSchema,
+   type TSchemaTemplateOptions,
+   create,
+} from "../base";
 import type { ObjectSchema } from "../types";
 
 export type TPropertyKey = string;
@@ -8,10 +15,11 @@ type ObjectStatic<T extends TProperties> = {
    [K in keyof T]: Static<T[K]>;
 };
 
-export interface TObject<T extends TProperties> extends TSchema {
+export interface TObject<T extends TProperties> extends TSchema<"object"> {
    type: "object";
    properties: T;
    static: ObjectStatic<T>;
+   required?: string[] | undefined;
 }
 
 export const object = <
@@ -25,13 +33,14 @@ export const object = <
       .filter(([, value]) => !($optional in value))
       .map(([key]) => key);
 
-   return {
+   return create<TObject<P>>("object", {
+      ...options,
       type: "object",
       properties,
       required: required.length > 0 ? required : undefined,
-      [$kind]: "object",
-      ...options,
-   } as any;
+      validate,
+      template,
+   });
 };
 
 export const strictObject = <
@@ -64,13 +73,13 @@ export const partialObject = <
    properties: P,
    options?: O
 ): TPartialObject<P> => {
-   return {
+   return create<TPartialObject<P>>("object", {
+      ...options,
       type: "object",
       properties,
-      required: undefined,
-      [$kind]: "object",
-      ...options,
-   } as any;
+      validate,
+      template,
+   });
 };
 
 export const record = <
@@ -98,9 +107,9 @@ export interface TAny extends TSchema {
 }
 
 export const any = (): TAny => {
-   return {
-      [$kind]: "any",
-   } as any;
+   return create<TAny>("any", {
+      validate: () => undefined,
+   });
 };
 
 function validate(this: ObjectSchema, value: unknown): string | void {
@@ -108,8 +117,50 @@ function validate(this: ObjectSchema, value: unknown): string | void {
       return "type";
    }
 
-   if (this.properties) {
-      for (const [key, property] of Object.entries(this.properties)) {
+   if (this.required) {
+      for (const key of this.required) {
+         if (!(key in value)) {
+            return `required.${key}`;
+         }
       }
    }
+
+   if (this.properties) {
+      for (const [key, property] of Object.entries(this.properties)) {
+         // @ts-ignore
+         const error = property.validate(value[key]);
+         if (error) {
+            return error;
+         }
+      }
+   }
+
+   // @todo: additionalProperties
+   // @todo: patternProperties
+   // @todo: minProperties
+   // @todo: maxProperties
+   // @todo: dependentRequired
+   // @todo: dependentSchemas
+}
+
+function template(this: ObjectSchema, opts: TSchemaTemplateOptions = {}) {
+   if (this.default) return this.default;
+   if (this.const) return this.const;
+
+   const result: Record<string, unknown> = {};
+
+   if (this.properties) {
+      for (const [key, property] of Object.entries(this.properties)) {
+         if (opts.withOptional !== true && !this.required?.includes(key)) {
+            continue;
+         }
+
+         // @ts-ignore
+         const value = property.template(opts);
+         if (value !== undefined) {
+            result[key] = value;
+         }
+      }
+   }
+   return result;
 }

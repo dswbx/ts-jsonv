@@ -10,10 +10,7 @@ describe("number", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<boolean>();
 
-      expect<any>(boolean()).toEqual({
-         type: "boolean",
-         [$kind]: "boolean",
-      });
+      expect<any>(boolean()[$kind]).toEqual("boolean");
       assertJson(boolean(), { type: "boolean" });
    });
 
@@ -49,5 +46,10 @@ describe("number", () => {
          type: "boolean",
          const: false,
       });
+   });
+
+   test("template", () => {
+      expect(boolean({ default: true }).template()).toEqual(true);
+      expect(boolean({ default: false }).template()).toEqual(false);
    });
 });

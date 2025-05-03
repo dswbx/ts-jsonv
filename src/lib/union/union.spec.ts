@@ -11,10 +11,7 @@ describe("union", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<string | number>();
 
-      expect<any>(schema).toEqual({
-         anyOf: [string(), number()],
-         [$kind]: "anyOf",
-      });
+      expect<any>(schema[$kind]).toEqual("anyOf");
 
       assertJson(schema, {
          anyOf: [{ type: "string" }, { type: "number" }],
@@ -40,10 +37,7 @@ describe("union", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<string | number>();
 
-      expect<any>(schema).toEqual({
-         oneOf: [string(), number()],
-         [$kind]: "oneOf",
-      });
+      expect<any>(schema[$kind]).toEqual("oneOf");
 
       assertJson(schema, {
          oneOf: [{ type: "string" }, { type: "number" }],
@@ -76,5 +70,10 @@ describe("union", () => {
             },
          ],
       });
+   });
+
+   test("template", () => {
+      const schema = anyOf([string(), number()], { default: 1 });
+      expect(schema.template()).toEqual(1);
    });
 });

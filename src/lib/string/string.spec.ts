@@ -1,7 +1,7 @@
 import { expectTypeOf } from "expect-type";
 import { $kind, type Static, type TSchema } from "../base";
 import { string, stringConst } from "./string";
-import { assertJson, assertSchema } from "../assert";
+import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
 
 describe("string", () => {
@@ -10,10 +10,6 @@ describe("string", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<string>();
 
-      assertSchema(string(), {
-         type: "string",
-         [$kind]: "string",
-      });
       assertJson(string(), { type: "string" });
    });
 
@@ -58,14 +54,6 @@ describe("string", () => {
       const schema = stringConst({ const: "hello" });
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<"hello">();
-
-      assertSchema(schema, {
-         type: "string",
-         [$kind]: "string",
-         const: "hello",
-         default: "hello",
-         readOnly: true,
-      });
 
       assertJson(schema, {
          type: "string",
@@ -120,5 +108,11 @@ describe("string", () => {
          expect(schema.validate("abc")).toBeUndefined();
          expect(schema.validate("abcd")).toEqual("maxLength");
       });
+   });
+
+   test("template", () => {
+      expect(string().template()).toEqual("");
+      expect(string({ default: "hello" }).template()).toEqual("hello");
+      expect(string({ const: "hello" }).template()).toEqual("hello");
    });
 });
