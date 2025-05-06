@@ -17,7 +17,7 @@ const schemas = [
    {
       name: "object with optional",
       schema: s.object({
-         name: s.optional(s.string()),
+         name: s.string().optional(),
          age: s.number({ minimum: 18 }),
       }),
       data: [

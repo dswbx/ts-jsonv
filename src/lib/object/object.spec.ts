@@ -1,9 +1,9 @@
 import { expectTypeOf } from "expect-type";
-import { $kind, $optional, optional, type Static, type TSchema } from "../base";
-import { object, partialObject, record, any } from "./object";
+import { $kind, type Static } from "../base";
+import { object, partialObject, record, any, strictObject } from "./object";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, anyOf, array, boolean } from "../";
+import { string, number } from "../";
 
 describe("object", () => {
    test("basic", () => {
@@ -16,7 +16,7 @@ describe("object", () => {
    test("with properties", () => {
       const schema = object({
          name: string(),
-         age: optional(number()),
+         age: number().optional(),
       });
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{ name: string; age?: number }>();
@@ -31,10 +31,80 @@ describe("object", () => {
       });
    });
 
+   test("strictObject", () => {
+      const schema = strictObject({
+         name: string(),
+         age: number(),
+      });
+      type Inferred = Static<typeof schema>;
+      expectTypeOf<Inferred>().toEqualTypeOf<{ name: string; age: number }>();
+
+      assertJson(schema, {
+         type: "object",
+         properties: {
+            name: { type: "string" },
+            age: { type: "number" },
+         },
+         required: ["name", "age"],
+         additionalProperties: false,
+      });
+   });
+
+   test("partialObject", () => {
+      const schema = partialObject({
+         name: string(),
+         age: number(),
+      });
+      type Inferred = Static<typeof schema>;
+      expectTypeOf<Inferred>().toEqualTypeOf<{ name?: string; age?: number }>();
+
+      assertJson(schema, {
+         type: "object",
+         properties: {
+            name: { type: "string" },
+            age: { type: "number" },
+         },
+      });
+   });
+
+   test("objects of objects", () => {
+      const schema = object({
+         name: string(),
+         age: number(),
+         address: object({
+            street: string(),
+            city: string(),
+         }),
+      });
+      type Inferred = Static<typeof schema>;
+      expectTypeOf<Inferred>().toEqualTypeOf<{
+         name: string;
+         age: number;
+         address: { street: string; city: string };
+      }>();
+
+      assertJson(schema, {
+         type: "object",
+         properties: {
+            name: { type: "string" },
+            age: { type: "number" },
+            address: {
+               type: "object",
+               properties: {
+                  street: { type: "string" },
+                  city: { type: "string" },
+               },
+               required: ["street", "city"],
+            },
+         },
+         required: ["name", "age", "address"],
+      });
+   });
+
    test("with optional", () => {
       const schema = object({
          name: string(),
-         age: optional(number()),
+         age: number().optional(),
       });
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{ name: string; age?: number }>();
@@ -52,16 +122,18 @@ describe("object", () => {
    test("record", () => {
       const schema = record({
          name: string(),
+         age: number().optional(),
       });
       type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<{ name: string }>();
+      expectTypeOf<Inferred>().toEqualTypeOf<{
+         [key: string]: { name: string; age?: number };
+      }>();
 
       assertJson(schema, {
          type: "object",
-         properties: {},
          additionalProperties: {
             type: "object",
-            properties: { name: { type: "string" } },
+            properties: { name: { type: "string" }, age: { type: "number" } },
             required: ["name"],
          },
       });
@@ -71,7 +143,7 @@ describe("object", () => {
       const schema = partialObject({
          name: string(),
          // expect this to be non-influential
-         age: optional(number()),
+         age: number().optional(),
       });
 
       type Inferred = Static<typeof schema>;
@@ -88,7 +160,7 @@ describe("object", () => {
 
    test("merging", () => {
       const schema1 = object({ string: string() });
-      const schema2 = object({ number: optional(number()) });
+      const schema2 = object({ number: number().optional() });
 
       // expect properties to be accessible
       expect(schema1.properties.string[$kind]).toEqual("string");
@@ -140,9 +212,25 @@ describe("object", () => {
       test("template", () => {
          const schema = object({
             name: string(),
-            surname: optional(string()),
+            surname: string().optional(),
          });
          expect(schema.template()).toEqual({ name: "" });
+      });
+   });
+
+   test("coerce", () => {
+      const schema = object({
+         name: string(),
+         age: number(),
+      });
+      expect(schema.coerce("{}")).toEqual({});
+      expect(schema.coerce('{"name": "John", "age": "30"}')).toEqual({
+         name: "John",
+         age: 30,
+      });
+      expect(schema.coerce({ name: "John", age: "30" })).toEqual({
+         name: "John",
+         age: 30,
       });
    });
 });

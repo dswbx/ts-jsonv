@@ -1,10 +1,4 @@
-export {
-   optional,
-   $kind,
-   type TSchema,
-   type Static,
-   type StaticConstEnum,
-} from "./base";
+export { $kind, type TSchema, type Static, type StaticConstEnum } from "./base";
 export {
    object,
    type TObject,

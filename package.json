@@ -19,6 +19,7 @@
       "test:types": "tsc --noEmit",
       "test": "bun test:types && bun test:unit",
       "build": "tsup",
+      "fetch": "npx giget gh:json-schema-org/JSON-Schema-Test-Suite/tests src/test/spec/lib",
       "prepublishOnly": "bun test && bun run build"
    },
    "devDependencies": {

@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { optional, type Static } from "../base";
+import { type Static } from "../base";
 import { array } from "./array";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -53,7 +53,9 @@ describe("array", () => {
    });
 
    test("with objects", () => {
-      const schema = array(object({ name: optional(string()), age: number() }));
+      const schema = array(
+         object({ name: string().optional(), age: number() })
+      );
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<
          { name?: string; age: number }[]
@@ -91,5 +93,21 @@ describe("array", () => {
    test("template", () => {
       const schema = array(string());
       expect(schema.template()).toEqual([]);
+   });
+
+   test("coerce", () => {
+      {
+         const schema = array(string());
+         expect(schema.coerce("[]")).toEqual([]);
+         expect(schema.coerce("[1]")).toEqual(["1"]);
+         expect(schema.coerce(["a", "1"])).toEqual(["a", "1"]);
+      }
+
+      {
+         const schema = array(number());
+         expect(schema.coerce("[]")).toEqual([]);
+         expect(schema.coerce("[1]")).toEqual([1]);
+         expect(schema.coerce(["1", "2"])).toEqual([1, 2]);
+      }
    });
 });

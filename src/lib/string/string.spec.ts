@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { $kind, type Static, type TSchema } from "../base";
+import { type Static } from "../base";
 import { string, stringConst } from "./string";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -108,11 +108,38 @@ describe("string", () => {
          expect(schema.validate("abc")).toBeUndefined();
          expect(schema.validate("abcd")).toEqual("maxLength");
       });
+
+      test("custom", () => {
+         const schema = string({
+            maxLength: 3,
+            validate: (value) => {
+               if (value === "throw") return "throw";
+               return;
+            },
+         });
+         expect(schema.validate("a")).toBeUndefined();
+         expect(schema.validate("abcd")).toBeUndefined();
+         expect(schema.validate("throw")).toEqual("throw");
+      });
    });
 
    test("template", () => {
       expect(string().template()).toEqual("");
       expect(string({ default: "hello" }).template()).toEqual("hello");
       expect(string({ const: "hello" }).template()).toEqual("hello");
+   });
+
+   test("coerce", () => {
+      expect(string().coerce("hello")).toEqual("hello");
+      expect(string().coerce(1)).toEqual("1");
+      expect(string().coerce(true)).toEqual("true");
+      expect(string().coerce(false)).toEqual("false");
+
+      // custom coersion
+      expect(
+         string({
+            coerce: (value) => String(value) + "!",
+         }).coerce("hello")
+      ).toEqual("hello!");
    });
 });

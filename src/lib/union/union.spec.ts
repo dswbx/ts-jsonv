@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { $kind, $optional, optional, type Static, type TSchema } from "../base";
+import { $kind, type Static } from "../base";
 import { allOf, anyOf, oneOf } from "./union";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -75,5 +75,36 @@ describe("union", () => {
    test("template", () => {
       const schema = anyOf([string(), number()], { default: 1 });
       expect(schema.template()).toEqual(1);
+   });
+
+   describe("validate", () => {
+      test("matches", () => {
+         expect(
+            anyOf([
+               string({ minLength: 3 }),
+               string({ minLength: 4 }),
+               string({ minLength: 7 }),
+            ])
+               .matches("hello")
+               .map((s) => ({
+                  type: s.type,
+                  // @ts-ignore
+                  minLength: s.minLength,
+               }))
+         ).toEqual([
+            { type: "string", minLength: 3 },
+            { type: "string", minLength: 4 },
+         ]);
+      });
+
+      test("validate", () => {
+         expect(anyOf([array(string()), number()]).validate("hello")).toEqual(
+            "no match"
+         );
+
+         string().optional();
+
+         expect(anyOf([string(), number()]).validate(1)).toEqual(undefined);
+      });
    });
 });

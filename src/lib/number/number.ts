@@ -1,4 +1,9 @@
-import { $kind, type StaticConstEnum, type TSchema, create } from "../base";
+import {
+   type StaticConstEnum,
+   type TSchema,
+   type TSchemaWithFn,
+   create,
+} from "../base";
 import type { NumberSchema } from "../types";
 
 export interface TNumber<S extends NumberSchema>
@@ -7,20 +12,26 @@ export interface TNumber<S extends NumberSchema>
    static: StaticConstEnum<S, number>;
 }
 
-export const number = <const S extends NumberSchema>(schema?: S) =>
+export const number = <const S extends TSchemaWithFn<NumberSchema>>(
+   schema?: S
+) =>
    create<TNumber<S>>("number", {
+      coerce: (value) => Number(value),
+      validate,
+      template,
       ...schema,
       type: "number",
-      validate,
-      template,
    });
 
-export const integer = <const S extends NumberSchema>(schema?: S) =>
+export const integer = <const S extends TSchemaWithFn<NumberSchema>>(
+   schema?: S
+) =>
    create<TNumber<S>>("integer", {
-      ...schema,
-      type: "integer",
+      coerce: (value) => Number(value),
       validate,
       template,
+      ...schema,
+      type: "integer",
    });
 
 function validate(this: NumberSchema, value: unknown): string | void {

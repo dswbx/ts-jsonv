@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { $kind, type Static, type TSchema } from "../base";
+import { type Static, type TSchema } from "../base";
 import { number } from "./number";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -116,5 +116,17 @@ describe("number", () => {
       );
       expect(number({ default: 1 }).template()).toEqual(1);
       expect(number({ const: 1 }).template()).toEqual(1);
+   });
+
+   test("coerce", () => {
+      expect(number().coerce("1")).toEqual(1);
+      expect(number().coerce(1)).toEqual(1);
+      expect(number().coerce(true)).toEqual(1);
+
+      // custom coersion
+      const schema = number({
+         coerce: (v) => Number(v) * 2,
+      });
+      expect(schema.coerce("1")).toEqual(2);
    });
 });

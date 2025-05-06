@@ -35,6 +35,7 @@ export type StringSchema = BaseJSONSchema & {
    minLength?: number;
    pattern?: string;
    format?: string;
+   const?: string;
 };
 
 export type NumberSchema = BaseJSONSchema & {
@@ -45,17 +46,16 @@ export type NumberSchema = BaseJSONSchema & {
    exclusiveMinimum?: number;
 };
 
-export type BooleanSchema = BaseJSONSchema & {
-   const?: boolean;
-   default?: boolean;
-};
+export type BooleanSchema = BaseJSONSchema;
 
 export type ArraySchema = BaseJSONSchema & {
-   items?: JSONSchemaDefinition | JSONSchemaDefinition[];
-   additionalItems?: JSONSchemaDefinition;
+   items?: JSONSchemaDefinition;
    uniqueItems?: boolean;
    maxItems?: number;
    minItems?: number;
+   contains?: JSONSchemaDefinition;
+   minContains?: number;
+   maxContains?: number;
 };
 
 export type ObjectSchema = BaseJSONSchema & {
@@ -68,6 +68,7 @@ export type ObjectSchema = BaseJSONSchema & {
    dependencies?: {
       [key in PropertyName]: JSONSchemaDefinition | PropertyName[];
    };
+   propertyNames?: JSONSchemaDefinition;
 };
 
 export interface JSONSchema
