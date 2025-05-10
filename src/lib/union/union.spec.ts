@@ -1,5 +1,6 @@
 import { expectTypeOf } from "expect-type";
-import { $kind, type Static } from "../base";
+import { type Static } from "../base";
+import { $kind } from "../symbols";
 import { allOf, anyOf, oneOf } from "./union";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -98,13 +99,14 @@ describe("union", () => {
       });
 
       test("validate", () => {
-         expect(anyOf([array(string()), number()]).validate("hello")).toEqual(
-            "no match"
-         );
+         expect(
+            anyOf([array(string()), number()]).validate("hello").errors[0]
+               ?.error
+         ).toEqual("Expected at least one to match");
 
          string().optional();
 
-         expect(anyOf([string(), number()]).validate(1)).toEqual(undefined);
+         expect(anyOf([string(), number()]).validate(1).valid).toBe(true);
       });
    });
 });

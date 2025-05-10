@@ -1,5 +1,12 @@
-import { type TSchema, type Merge, create, type TSchemaWithFn } from "../base";
+import {
+   type TSchema,
+   type Merge,
+   create,
+   type TSchemaWithFn,
+   type ValidationOptions,
+} from "../base";
 import type { BaseJSONSchema } from "../types";
+import { error, valid } from "../utils/details";
 
 type StaticUnion<T extends TSchema[]> = T extends [infer U, ...infer Rest]
    ? U extends TSchema
@@ -29,12 +36,16 @@ export const anyOf = <
    schema?: S
 ) => {
    return create<TUnionAnyOf<T>>("anyOf", {
-      validate: function (this: TUnionAnyOf<T>, value: unknown) {
+      validate: function (
+         this: TUnionAnyOf<T>,
+         value: unknown,
+         opts: ValidationOptions = {}
+      ) {
          const matches = this.matches(value);
          if (matches.length > 0) {
-            return;
+            return valid();
          }
-         return "no match";
+         return error(opts, "anyOf", "Expected at least one to match");
       },
       ...schema,
       anyOf: schemas,
@@ -54,14 +65,22 @@ export const oneOf = <
    schema?: S
 ) => {
    return create<TUnionOneOf<T>>("oneOf", {
-      validate: function (this: TUnionAnyOf<T>, value: unknown) {
+      validate: function (
+         this: TUnionAnyOf<T>,
+         value: unknown,
+         opts: ValidationOptions = {}
+      ) {
          const matches = this.matches(value);
          if (matches.length === 0) {
-            return;
+            return error(opts, "oneOf", "Expected exactly one to match");
          } else if (matches.length > 1) {
-            return "multiple matches";
+            return error(
+               opts,
+               "oneOf",
+               "Expected exactly one to match, but got " + matches.length
+            );
          }
-         return "no match";
+         return valid();
       },
       ...schema,
       oneOf: schemas,
@@ -75,7 +94,7 @@ function matches<T extends TSchema[]>(
 ): TSchema[] {
    const schemas = "anyOf" in this ? this.anyOf : this.oneOf;
    return schemas
-      .map((s) => (s.validate(value) === undefined ? s : undefined))
+      .map((s) => (s.validate(value).valid ? s : undefined))
       .filter(Boolean) as TSchema[];
 }
 

@@ -1,24 +1,34 @@
-import type { BaseJSONSchema } from "./types";
-
-export const $kind = Symbol.for("kind");
-export const $optional = Symbol.for("optional");
+import type { BaseJSONSchema, JSONSchemaTypeName, PropertyName } from "./types";
+import { valid, type ErrorDetail } from "./utils/details";
+import { validateTypeKeywords } from "./validation/validate";
+import { $kind, $optional } from "./symbols";
 
 export type TSchemaTemplateOptions = {
    withOptional?: boolean;
 };
 
 export interface TSchemaFn {
-   validate: (value: unknown) => void | string;
+   validate: (value: unknown, opts?: ValidationOptions) => ValidationResult;
    template: (opts?: TSchemaTemplateOptions) => unknown;
    coerce: (value: unknown) => unknown;
 }
 
-export interface TSchema<Kind extends string = any>
-   extends BaseJSONSchema,
-      TSchemaFn {
+export interface TSchema<Kind extends string = any> extends TSchemaFn {
    [$kind]: Kind;
-   $id?: string;
    static: unknown;
+   $id?: string;
+   $ref?: string;
+   $schema?: string;
+   title?: string;
+   description?: string;
+   default?: any;
+   readOnly?: boolean;
+   writeOnly?: boolean;
+   $defs?: { [key in PropertyName]: TSchema };
+   $comment?: string;
+   type?: JSONSchemaTypeName | JSONSchemaTypeName[];
+   enum?: readonly any[] | any[];
+   const?: any;
 }
 
 export type TSchemaWithFn<S extends BaseJSONSchema> = S & Partial<TSchemaFn>;
@@ -70,6 +80,18 @@ export type StaticConstEnum<
       : Fallback
    : Fallback;
 
+export type ValidationOptions = {
+   keywordPath?: string[];
+   instancePath?: string[];
+   coerce?: boolean;
+   errors?: ErrorDetail[];
+};
+
+export type ValidationResult = {
+   valid: boolean;
+   errors: ErrorDetail[];
+};
+
 export function create<S extends TSchema>(
    kind: string,
    schema: Partial<S> = {}
@@ -87,13 +109,20 @@ export function create<S extends TSchema>(
          if (schema.coerce) return schema.coerce(value);
          return value;
       },
-      validate: function (this: S, value: unknown) {
+      validate: function (
+         this: S,
+         _value: unknown,
+         opts: ValidationOptions = {}
+      ) {
          if (Array.isArray(this.type)) {
             throw new Error("type arrays not implemented");
          }
 
-         if (this.const !== undefined && this.const !== value) return "const";
-         if (this.enum && !this.enum.includes(value)) return "enum";
+         const value = opts?.coerce ? this.coerce(_value) : _value;
+
+         // validate keywords
+         const result = validateTypeKeywords(this, value, opts);
+         if (!result.valid) return result;
 
          const todo = [
             //"readOnly",
@@ -121,8 +150,10 @@ export function create<S extends TSchema>(
          // @todo: $ref
          // @todo: $defs
 
-         if (schema.validate) return schema.validate(value);
-         return "not implemented";
+         if (schema.validate) {
+            return schema.validate(value, opts);
+         }
+         return valid();
       },
       template: function (opts: TSchemaTemplateOptions = {}) {
          if (this.default !== undefined) return this.default;

@@ -1,9 +1,11 @@
 import { expectTypeOf } from "expect-type";
-import { $kind, type Static } from "../base";
-import { object, partialObject, record, any, strictObject } from "./object";
+import { type Static } from "../base";
+import { object, partialObject, record, strictObject } from "./object";
+import { any } from "../misc/any";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number } from "../";
+import { string, number, boolean } from "../";
+import { $kind } from "../symbols";
 
 describe("object", () => {
    test("basic", () => {
@@ -194,8 +196,8 @@ describe("object", () => {
    describe("validate", () => {
       test("base", () => {
          const schema = object({});
-         expect(schema.validate({})).toBeUndefined();
-         expect(schema.validate(1)).toEqual("type");
+         expect(schema.validate({}).valid).toBe(true);
+         expect(schema.validate(1).errors[0]?.error).toEqual("Expected object");
       });
 
       test("properties", () => {
@@ -203,10 +205,47 @@ describe("object", () => {
             name: string(),
             age: number(),
          });
-         expect(schema.validate({ name: "John", age: 30 })).toBeUndefined();
-         expect(schema.validate({ name: "John" })).toEqual("required.age");
-         expect(schema.validate({ name: "John", age: "30" })).toEqual("type");
-         expect(schema.validate({})).toEqual("required.name");
+         expect(schema.validate({ name: "John", age: 30 }).valid).toBe(true);
+         expect(schema.validate({ name: "John" }).errors[0]?.error).toEqual(
+            "Expected object with required properties name, age"
+         );
+         expect(
+            schema.validate({ name: "John", age: "30" }).errors[0]?.error
+         ).toEqual("Expected number");
+         expect(schema.validate({}).errors[0]?.error).toEqual(
+            "Expected object with required properties name, age"
+         );
+
+         {
+            // patternProperties ignores additionalProperties
+            const result = object(
+               { a: number() },
+               {
+                  patternProperties: { "^b": string() },
+                  additionalProperties: false,
+               }
+            ).validate({ a: 11, b: "2" });
+            expect(result.valid).toBe(true);
+         }
+
+         {
+            // an additional invalid property is invalid
+            const result = object(
+               {
+                  foo: any(),
+                  bar: any(),
+               },
+               {
+                  additionalProperties: boolean(),
+               }
+            ).validate({
+               foo: 1,
+               bar: 2,
+               quux: 12,
+            });
+            expect(result.valid).toBe(false);
+            expect(result.errors[0]?.error).toEqual("Expected boolean");
+         }
       });
 
       test("template", () => {

@@ -1,13 +1,16 @@
 import {
-   $optional,
    type Static,
    type TSchema,
    type TSchemaTemplateOptions,
    type TSchemaWithFn,
+   type ValidationOptions,
+   type ValidationResult,
    create,
 } from "../base";
+import { $optional } from "../symbols";
 import type { ObjectSchema } from "../types";
-import { invariant, isSchema, isValidPropertyName } from "../utils";
+import { invariant, isObject, isSchema, isValidPropertyName } from "../utils";
+import { error, makeOpts, valid } from "../utils/details";
 
 export type TPropertyKey = string;
 export type TProperties = Record<TPropertyKey, TSchema>;
@@ -18,7 +21,7 @@ type ObjectStatic<T extends TProperties> = {
 
 export interface TObject<T extends TProperties>
    extends TSchema<"object">,
-      ObjectSchema {
+      ObjectSchema<TSchema> {
    type: "object";
    properties: T;
    static: ObjectStatic<T>;
@@ -27,22 +30,27 @@ export interface TObject<T extends TProperties>
 
 export const object = <
    P extends TProperties,
-   O extends TSchemaWithFn<Omit<ObjectSchema, "properties" | "required">>
+   O extends TSchemaWithFn<
+      Omit<ObjectSchema<TSchema>, "properties" | "required">
+   >
 >(
    properties: P,
    options?: O
 ) => {
-   for (const key of Object.keys(properties)) {
-      invariant(isValidPropertyName(key), "invalid property name");
-      invariant(isSchema(properties[key]), "invalid property schema");
+   for (const key of Object.keys(properties || {})) {
+      invariant(isValidPropertyName(key), "invalid property name", key);
+      invariant(
+         isSchema(properties[key]),
+         "properties must be managed schemas",
+         properties[key]
+      );
    }
 
-   const required = Object.entries(properties)
+   const required = Object.entries(properties || {})
       .filter(([, value]) => !($optional in value))
       .map(([key]) => key);
 
    return create<TObject<P>>("object", {
-      validate,
       template,
       coerce,
       ...options,
@@ -54,7 +62,9 @@ export const object = <
 
 export const strictObject = <
    P extends TProperties,
-   O extends TSchemaWithFn<Omit<ObjectSchema, "properties" | "required">>
+   O extends TSchemaWithFn<
+      Omit<ObjectSchema<TSchema, TSchema, false>, "properties" | "required">
+   >
 >(
    properties: P,
    options?: O
@@ -85,7 +95,6 @@ export const partialObject = <
    options?: O
 ) => {
    return create<TPartialObject<P>>("object", {
-      validate,
       template,
       coerce,
       ...options,
@@ -110,10 +119,9 @@ export const record = <
 >(
    properties: P,
    options?: O,
-   apOptions?: Omit<ObjectSchema, "properties" | "required">
+   apOptions?: Omit<ObjectSchema<TSchema>, "properties" | "required">
 ) => {
    return create<TRecord<P>>("object", {
-      validate,
       template,
       coerce,
       ...options,
@@ -121,66 +129,6 @@ export const record = <
       additionalProperties: object(properties, apOptions),
    });
 };
-
-export interface TAny extends TSchema {
-   static: any;
-}
-
-export const any = (): TAny => {
-   return create<TAny>("any", {
-      validate: () => undefined,
-   });
-};
-
-function validate(this: ObjectSchema, value: unknown): string | void {
-   if (typeof value !== "object" || value === null) {
-      return "type";
-   }
-
-   if (this.required) {
-      for (const key of this.required) {
-         if (!(key in value)) {
-            return `required.${key}`;
-         }
-      }
-   }
-
-   const properties = {
-      ...this.properties,
-      ...(typeof this.additionalProperties === "object"
-         ? this.additionalProperties.properties
-         : {}),
-   };
-
-   if (properties) {
-      for (const [key, property] of Object.entries(properties)) {
-         // @ts-ignore
-         const error = property.validate(value[key]);
-         if (error) {
-            return error;
-         }
-      }
-   }
-
-   // @todo: patternProperties
-   // @todo: propertyNames
-   const todo = ["patternProperties", "propertyNames"];
-   for (const item of todo) {
-      if (this[item]) {
-         throw new Error(`${item} not implemented`);
-      }
-   }
-
-   const prop_names = Object.keys(properties);
-   const prop_names_length = prop_names.length;
-   if (this.minProperties && prop_names_length < this.minProperties) {
-      return "minProperties";
-   }
-
-   if (this.maxProperties && prop_names_length > this.maxProperties) {
-      return "maxProperties";
-   }
-}
 
 function template(this: ObjectSchema, opts: TSchemaTemplateOptions = {}) {
    if (this.default) return this.default;

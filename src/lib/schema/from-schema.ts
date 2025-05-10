@@ -1,6 +1,8 @@
 import type { JSONSchemaDefinition } from "../types";
 import * as lib from "..";
-import { isObject, isNonBooleanSchema, isTypeSchema } from "../utils";
+import * as unionFns from "../union/union";
+import { isObject, isTypeSchema, isArray } from "../utils";
+import { InvalidRawSchemaError } from "../errors";
 
 function eachArray<T>(array: any | any[], fn: (item: any) => T): T[] {
    return Array.isArray(array)
@@ -12,19 +14,76 @@ function eachArray<T>(array: any | any[], fn: (item: any) => T): T[] {
 
 function eachObject<T>(
    object: Record<string, any>,
-   fn: (item: any) => T
+   fn: (item: any) => T,
+   cb: (s: T, key: string) => T | Omit<T, "optional"> = (s) => s
 ): Record<string, T> {
    return Object.fromEntries(
-      Object.entries(object).map(([key, value]) => [key, fn(value)])
-   );
+      Object.entries(object).map(([key, value]) => [key, cb(fn(value), key)])
+   ) as Record<string, T>;
 }
 
-export function fromSchema(schema: JSONSchemaDefinition): lib.TSchema<any> {
-   if (!isNonBooleanSchema(schema)) {
-      throw new Error("boolean schemas not implemented");
+export function fromSchema<S extends JSONSchemaDefinition>(
+   _schema: S
+): lib.TAny & {
+   optional: () => lib.TOptional<lib.TAny>;
+} {
+   const schema = structuredClone(_schema);
+
+   if (typeof schema === "boolean") {
+      return lib.booleanSchema(schema) as any;
    }
+
    if (!isObject(schema)) {
-      throw new Error("non-object schemas not implemented");
+      throw new InvalidRawSchemaError(
+         "non-object schemas not implemented",
+         schema
+      );
+   }
+
+   if ("properties" in schema && schema.properties) {
+      schema.properties = eachObject(
+         schema.properties,
+         fromSchema,
+         (s, key) => {
+            if ("required" in schema && schema.required?.includes(key)) {
+               return s;
+            }
+            return s.optional();
+         }
+      );
+   }
+   if ("patternProperties" in schema && schema.patternProperties) {
+      schema.patternProperties = eachObject(
+         schema.patternProperties,
+         fromSchema
+      );
+   }
+
+   const schemaize = [
+      "additionalProperties",
+      "items",
+      "prefixItems",
+      "propertyNames",
+      "contains",
+   ];
+   for (const key of schemaize) {
+      if (key in schema && typeof schema[key] !== "undefined") {
+         if (isArray(schema[key])) {
+            schema[key] = eachArray(schema[key], fromSchema);
+         } else {
+            schema[key] = fromSchema(schema[key]);
+         }
+      }
+   }
+
+   // @todo: anyOf/etc with type is ignored
+   const unions = ["anyOf", "oneOf", "allOf"];
+   for (const union of unions) {
+      if (union in schema) {
+         // @ts-ignore
+         const { [union]: _schemas, ...rest } = schema;
+         return unionFns[union](eachArray(_schemas, fromSchema), rest);
+      }
    }
 
    if (isTypeSchema(schema)) {
@@ -38,38 +97,19 @@ export function fromSchema(schema: JSONSchemaDefinition): lib.TSchema<any> {
          case "boolean":
             return lib.boolean(schema);
          case "object": {
-            const { properties, additionalProperties, ...rest } = schema;
-            return lib.object(
-               properties ? eachObject(properties, fromSchema) : {},
-               {
-                  ...rest,
-                  additionalProperties: additionalProperties
-                     ? fromSchema(additionalProperties)
-                     : undefined,
-               }
-            );
+            // @ts-ignore
+            const { properties, ...rest } = schema;
+            return lib.object(properties as any, rest as any);
          }
          case "array": {
+            // @ts-ignore
             const { items, ...rest } = schema;
-            if (!isTypeSchema(items)) {
-               throw new Error("array items must be a type schema");
-            }
-
-            return lib.array(fromSchema(items), rest);
+            return lib.array(items as any, rest as any);
          }
          case "null":
-            throw new Error("null schemas not implemented");
+            return lib.nullSchema();
       }
    }
 
-   const unions = ["anyOf", "oneOf", "allOf"];
-   for (const union of unions) {
-      if (union in schema) {
-         const { [union]: _schemas, ...rest } = schema;
-         return lib[union](eachArray(_schemas, fromSchema), rest);
-      }
-   }
-
-   console.log("schema", schema);
-   throw new Error("unknown schema");
+   return lib.any(schema as any);
 }

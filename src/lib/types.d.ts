@@ -10,6 +10,11 @@ export type JSONSchemaTypeName =
 export type JSONSchemaDefinition = JSONSchema | boolean;
 export type PropertyName = string;
 
+export type Bla = {
+   enum?: readonly any[] | any[];
+   const?: any;
+};
+
 export type BaseJSONSchema = {
    $id?: string;
    $ref?: string;
@@ -19,9 +24,6 @@ export type BaseJSONSchema = {
    default?: any;
    readOnly?: boolean;
    writeOnly?: boolean;
-
-   // Definitions
-   definitions?: { [key in PropertyName]: JSONSchemaDefinition };
    $comment?: string;
 
    // Data types
@@ -35,7 +37,6 @@ export type StringSchema = BaseJSONSchema & {
    minLength?: number;
    pattern?: string;
    format?: string;
-   const?: string;
 };
 
 export type NumberSchema = BaseJSONSchema & {
@@ -48,44 +49,55 @@ export type NumberSchema = BaseJSONSchema & {
 
 export type BooleanSchema = BaseJSONSchema;
 
-export type ArraySchema = BaseJSONSchema & {
-   items?: JSONSchemaDefinition;
+export type ArraySchema<
+   Items extends JSONSchemaDefinition = JSONSchemaDefinition,
+   Contains extends JSONSchemaDefinition = JSONSchemaDefinition
+> = BaseJSONSchema & {
+   items?: Items | boolean;
    uniqueItems?: boolean;
    maxItems?: number;
    minItems?: number;
-   contains?: JSONSchemaDefinition;
+   contains?: Contains;
    minContains?: number;
    maxContains?: number;
+   prefixItems?: Contains[];
 };
 
-export type ObjectSchema = BaseJSONSchema & {
-   properties?: { [key in PropertyName]: JSONSchemaDefinition };
-   patternProperties?: { [key in PropertyName]: JSONSchemaDefinition };
-   additionalProperties?: JSONSchemaDefinition;
+export type ObjectSchema<
+   P extends JSONSchemaDefinition = JSONSchemaDefinition,
+   PP extends JSONSchemaDefinition = P,
+   AP extends JSONSchemaDefinition = P,
+   DP extends JSONSchemaDefinition = P,
+   PN extends JSONSchemaDefinition = P
+> = BaseJSONSchema & {
+   properties?: { [key in PropertyName]: P };
+   patternProperties?: { [key: string]: PP };
+   additionalProperties?: AP | boolean;
    required?: PropertyName[];
    maxProperties?: number;
    minProperties?: number;
    dependencies?: {
-      [key in PropertyName]: JSONSchemaDefinition | PropertyName[];
+      [key in PropertyName]: P | PropertyName[];
    };
-   propertyNames?: JSONSchemaDefinition;
+   propertyNames?: PN | boolean;
 };
 
-export interface JSONSchema
-   extends BaseJSONSchema,
+export interface JSONSchema<
+   S extends JSONSchemaDefinition = JSONSchemaDefinition
+> extends BaseJSONSchema,
       StringSchema,
       NumberSchema,
       BooleanSchema,
-      ArraySchema,
-      ObjectSchema {
+      ArraySchema<S, S>,
+      ObjectSchema<S> {
    // Combining schemas
-   allOf?: JSONSchemaDefinition[];
-   anyOf?: JSONSchemaDefinition[];
-   oneOf?: JSONSchemaDefinition[];
-   not?: JSONSchemaDefinition;
-   if?: JSONSchemaDefinition;
-   then?: JSONSchemaDefinition;
-   else?: JSONSchemaDefinition;
+   allOf?: S[];
+   anyOf?: S[];
+   oneOf?: S[];
+   not?: S;
+   if?: S;
+   then?: S;
+   else?: S;
 
    // catch-all for custom extensions
    [key: string | symbol]: any;

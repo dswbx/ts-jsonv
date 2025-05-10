@@ -17,7 +17,6 @@ export const number = <const S extends TSchemaWithFn<NumberSchema>>(
 ) =>
    create<TNumber<S>>("number", {
       coerce: (value) => Number(value),
-      validate,
       template,
       ...schema,
       type: "number",
@@ -28,37 +27,10 @@ export const integer = <const S extends TSchemaWithFn<NumberSchema>>(
 ) =>
    create<TNumber<S>>("integer", {
       coerce: (value) => Number(value),
-      validate,
       template,
       ...schema,
       type: "integer",
    });
-
-function validate(this: NumberSchema, value: unknown): string | void {
-   if (typeof value !== "number") {
-      return "type";
-   }
-
-   if (this.multipleOf !== undefined && value % this.multipleOf !== 0) {
-      return "multipleOf";
-   }
-
-   if (this.maximum !== undefined && value > this.maximum) {
-      return "maximum";
-   }
-
-   if (this.exclusiveMaximum !== undefined && value >= this.exclusiveMaximum) {
-      return "exclusiveMaximum";
-   }
-
-   if (this.minimum !== undefined && value < this.minimum) {
-      return "minimum";
-   }
-
-   if (this.exclusiveMinimum !== undefined && value <= this.exclusiveMinimum) {
-      return "exclusiveMinimum";
-   }
-}
 
 function template(this: NumberSchema) {
    if (this.minimum) return this.minimum;

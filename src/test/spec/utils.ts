@@ -1,13 +1,17 @@
 import { Glob } from "bun";
 import type { JSONSchema } from "../../lib/types";
 
-export async function getTestFiles(draft: string, skip?: RegExp[]) {
+export async function getTestFiles(
+   draft: string,
+   options: { skip?: RegExp[]; only?: RegExp[] } = {}
+) {
    const glob = new Glob("**/*.json");
    const files: string[] = [];
    const dir = `${import.meta.dir}/lib/${draft}`;
 
    for await (const file of glob.scan(dir)) {
-      if (skip && skip.some((r) => r.test(file))) continue;
+      if (options.skip && options.skip.some((r) => r.test(file))) continue;
+      if (options.only && !options.only.some((r) => r.test(file))) continue;
       files.push(dir + "/" + file);
    }
    return files;
@@ -30,4 +34,13 @@ export async function loadTest(file: string) {
          }[];
       }[];
    };
+}
+
+export function recurisvelyHasKeys(obj: any, keys: string[]) {
+   if (keys.length === 0) return true;
+   if (typeof obj !== "object" || obj === null) return false;
+   return (
+      keys.some((key) => key in obj) ||
+      Object.values(obj).some((value) => recurisvelyHasKeys(value, keys))
+   );
 }

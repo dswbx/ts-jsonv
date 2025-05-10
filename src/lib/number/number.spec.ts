@@ -1,6 +1,6 @@
 import { expectTypeOf } from "expect-type";
 import { type Static, type TSchema } from "../base";
-import { number } from "./number";
+import { integer, number } from "./number";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
 
@@ -50,60 +50,90 @@ describe("number", () => {
       });
    });
 
+   test("integer", () => {
+      assertJson(integer(), {
+         type: "integer",
+      });
+   });
+
    describe("validate", () => {
       test("base", () => {
          const schema = number();
-         expect(schema.validate(1)).toBeUndefined();
-         expect(schema.validate("1")).toEqual("type");
-         expect(schema.validate(undefined)).toEqual("type");
-         expect(schema.validate(null)).toEqual("type");
-         expect(schema.validate({})).toEqual("type");
-         expect(schema.validate([])).toEqual("type");
+         expect(schema.validate(1).valid).toBe(true);
+         expect(schema.validate("1").errors[0]?.error).toEqual(
+            "Expected number"
+         );
+         expect(schema.validate(undefined).errors[0]?.error).toEqual(
+            "Expected number"
+         );
+         expect(schema.validate(null).errors[0]?.error).toEqual(
+            "Expected number"
+         );
+         expect(schema.validate({}).errors[0]?.error).toEqual(
+            "Expected number"
+         );
+         expect(schema.validate([]).errors[0]?.error).toEqual(
+            "Expected number"
+         );
       });
 
       test("const", () => {
          const schema = number({ const: 1 });
-         expect(schema.validate(1)).toBeUndefined();
-         expect(schema.validate(2)).toEqual("const");
+         expect(schema.validate(1).valid).toBe(true);
+         expect(schema.validate(2).errors[0]?.error).toEqual(
+            "Expected const: 1"
+         );
       });
 
       test("enum", () => {
          const schema = number({ enum: [1, 2, 3] });
-         expect(schema.validate(1)).toBeUndefined();
-         expect(schema.validate(2)).toBeUndefined();
-         expect(schema.validate(3)).toBeUndefined();
-         expect(schema.validate(4)).toEqual("enum");
+         expect(schema.validate(1).valid).toBe(true);
+         expect(schema.validate(2).valid).toBe(true);
+         expect(schema.validate(3).valid).toBe(true);
+         expect(schema.validate(4).errors[0]?.error).toEqual(
+            "Expected enum: [1,2,3]"
+         );
       });
 
       test("multipleOf", () => {
          const schema = number({ multipleOf: 2 });
-         expect(schema.validate(2)).toBeUndefined();
-         expect(schema.validate(3)).toEqual("multipleOf");
-         expect(schema.validate(4)).toBeUndefined();
+         expect(schema.validate(2).valid).toBe(true);
+         expect(schema.validate(3).errors[0]?.error).toEqual(
+            "Expected number being a multiple of 2"
+         );
+         expect(schema.validate(4).valid).toBe(true);
       });
 
       test("maximum", () => {
          const schema = number({ maximum: 1 });
-         expect(schema.validate(1)).toBeUndefined();
-         expect(schema.validate(2)).toEqual("maximum");
+         expect(schema.validate(1).valid).toBe(true);
+         expect(schema.validate(2).errors[0]?.error).toEqual(
+            "Expected number less than or equal to 1"
+         );
       });
 
       test("exclusiveMaximum", () => {
          const schema = number({ exclusiveMaximum: 3 });
-         expect(schema.validate(3)).toEqual("exclusiveMaximum");
-         expect(schema.validate(2)).toBeUndefined();
+         expect(schema.validate(3).errors[0]?.error).toEqual(
+            "Expected number less than 3"
+         );
+         expect(schema.validate(2).valid).toBe(true);
       });
 
       test("minimum", () => {
          const schema = number({ minimum: 1 });
-         expect(schema.validate(1)).toBeUndefined();
-         expect(schema.validate(0)).toEqual("minimum");
+         expect(schema.validate(1).valid).toBe(true);
+         expect(schema.validate(0).errors[0]?.error).toEqual(
+            "Expected number greater than or equal to 1"
+         );
       });
 
       test("exclusiveMinimum", () => {
          const schema = number({ exclusiveMinimum: 1 });
-         expect(schema.validate(1)).toEqual("exclusiveMinimum");
-         expect(schema.validate(2)).toBeUndefined();
+         expect(schema.validate(1).errors[0]?.error).toEqual(
+            "Expected number greater than 1"
+         );
+         expect(schema.validate(2).valid).toBe(true);
       });
    });
 

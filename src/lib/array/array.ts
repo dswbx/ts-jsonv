@@ -1,10 +1,5 @@
-import {
-   $kind,
-   type Static,
-   type TSchema,
-   type TSchemaWithFn,
-   create,
-} from "../base";
+import { type Static, type TSchema, type TSchemaWithFn, create } from "../base";
+import { $kind } from "../symbols";
 import type { ArraySchema } from "../types";
 import { isSchema, invariant } from "../utils";
 
@@ -13,22 +8,26 @@ export type TProperties = Record<TPropertyKey, TSchema>;
 
 type ArrayStatic<T extends TSchema> = Static<T>[] & {};
 
-export interface TArray<T extends TSchema> extends TSchema<"array"> {
-   items: T;
-   static: ArrayStatic<T>;
+export interface TArray<
+   Items extends TSchema = TSchema,
+   Contains extends TSchema = TSchema
+> extends TSchema<"array">,
+      ArraySchema<Items, Contains> {
+   static: ArrayStatic<Items>;
 }
 
 export const array = <
-   const T extends TSchema,
-   O extends TSchemaWithFn<Omit<ArraySchema, "items">>
+   const Items extends TSchema,
+   O extends TSchemaWithFn<ArraySchema>
 >(
-   items: T,
-   options?: O
+   items: Items | boolean,
+   options?: O & { contains?: TSchema; prefixItems?: TSchema[] }
 ) => {
-   invariant(isSchema(items), "items must be a schema");
+   if (items !== undefined) {
+      invariant(isSchema(items), "items must be a schema", items);
+   }
 
-   return create<TArray<T>>("array", {
-      validate,
+   return create<TArray<Items>>("array", {
       template: () => [],
       coerce,
       ...options,
@@ -37,42 +36,6 @@ export const array = <
       [$kind]: "array",
    });
 };
-
-function validate(this: ArraySchema, value: unknown): string | void {
-   if (!Array.isArray(value)) {
-      return "type";
-   }
-
-   if (this.minItems !== undefined && value.length < this.minItems) {
-      return "minItems";
-   }
-
-   if (this.maxItems !== undefined && value.length > this.maxItems) {
-      return "maxItems";
-   }
-
-   if (this.items) {
-      for (const item of value) {
-         // @ts-ignore
-         const error = this.items.validate(item);
-         if (error) {
-            return error;
-         }
-      }
-   }
-
-   const todo = ["uniqueItems", "contains", "minContains", "maxContains"];
-   for (const item of todo) {
-      if (this[item]) {
-         throw new Error(`${item} not implemented`);
-      }
-   }
-
-   // @todo: uniqueItems
-   // @todo: contains
-   // @todo: minContains
-   // @todo: maxContains
-}
 
 function coerce(this: ArraySchema, _value: unknown) {
    const value = typeof _value === "string" ? JSON.parse(_value) : _value;

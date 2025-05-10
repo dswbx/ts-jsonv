@@ -10,11 +10,6 @@ export interface TBoolean<S extends BooleanSchema>
 export const boolean = <const S extends BooleanSchema>(schema?: S) =>
    create<TBoolean<S>>("boolean", {
       coerce: (value) => Boolean(value),
-      validate: function (this: BooleanSchema, v: unknown) {
-         if (typeof v !== "boolean") {
-            return "type";
-         }
-      },
       ...schema,
       type: "boolean",
    });

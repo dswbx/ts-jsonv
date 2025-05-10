@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { type Static } from "../base";
+import { type Static, type TSchema } from "../base";
 import { array } from "./array";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -71,22 +71,48 @@ describe("array", () => {
       });
    });
 
+   test("contains", () => {
+      const schema = array(string(), { contains: string() });
+      type Inferred = Static<typeof schema>;
+      expectTypeOf<Inferred>().toEqualTypeOf<string[]>();
+
+      expectTypeOf<typeof schema.contains>().toEqualTypeOf<
+         TSchema | undefined
+      >();
+
+      assertJson(schema, {
+         type: "array",
+         items: { type: "string" },
+         contains: { type: "string" },
+      });
+   });
+
    describe("validate", () => {
       test("base", () => {
          const schema = array(string());
-         expect(schema.validate({})).toEqual("type");
+         expect(schema.validate({}).errors[0]?.error).toEqual("Expected array");
       });
 
       test("minItems", () => {
          const schema = array(string(), { minItems: 2 });
-         expect(schema.validate(["a"])).toEqual("minItems");
-         expect(schema.validate(["a", "b"])).toBeUndefined();
+         expect(schema.validate(["a"]).errors[0]?.error).toEqual(
+            "Expected array with at least 2 items"
+         );
+         expect(schema.validate(["a", "b"]).valid).toBe(true);
       });
 
       test("maxItems", () => {
          const schema = array(string(), { maxItems: 2 });
-         expect(schema.validate(["a", "b", "c"])).toEqual("maxItems");
-         expect(schema.validate(["a", "b"])).toBeUndefined();
+         expect(schema.validate(["a", "b", "c"]).errors[0]?.error).toEqual(
+            "Expected array with at most 2 items"
+         );
+         expect(schema.validate(["a", "b"]).valid).toBe(true);
+      });
+
+      test("contains", () => {
+         const schema = array(string(), { contains: string() });
+         expect(schema.validate(["a", "b"]).valid).toBe(true);
+         expect(schema.validate(["a", "b", 1]).valid).toBe(false);
       });
    });
 
