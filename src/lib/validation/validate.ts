@@ -28,6 +28,7 @@ import {
 } from "./keywords";
 import { InvalidTypeError } from "../errors";
 import type { TAny } from "../misc/any";
+import { format } from "./format";
 
 const defaultKeywords = {
    type: _type,
@@ -51,6 +52,7 @@ export const keywords: Record<
       pattern,
       minLength,
       maxLength,
+      //format,
    },
    number: {
       ...defaultKeywords,

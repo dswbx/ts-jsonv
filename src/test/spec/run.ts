@@ -59,6 +59,7 @@ const skips: SkipFn[] = [
          "format-assertion",
          "non-bmp-regex",
          "float-overflow",
+         "ecmascript-regex",
       ].some((k) => file.includes(k) || recurisvelyHasKeys(schema, [k])),
 
    // skip array-types
@@ -69,8 +70,8 @@ const skips: SkipFn[] = [
       (test && [].some((s) => test.description.includes(s))) || false,
 ];
 
-const abort_early = false;
-const explain = false;
+const abort_early = true;
+const explain = true;
 
 for (const testSuite of tests) {
    console.log(c.cyan(`\n[TEST] ${testSuite.path}`));

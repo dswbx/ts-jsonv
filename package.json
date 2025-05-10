@@ -44,6 +44,7 @@
       "format": "esm",
       "platform": "neutral",
       "dts": true,
+      "metafile": true,
       "minify": true,
       "clean": true,
       "outDir": "dist"
