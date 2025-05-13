@@ -118,6 +118,26 @@ export const not = ({ not }: TSchema, value: unknown, opts: Opts = {}) => {
    }
    return valid();
 };
+
+export const ifThenElse = (
+   { if: _if, then: _then, else: _else }: TSchema,
+   value: unknown,
+   opts: Opts = {}
+) => {
+   if (isSchema(_if) && (isSchema(_then) || isSchema(_else))) {
+      const result = _if.validate(value);
+      if (result.valid) {
+         if (isSchema(_then)) {
+            return _then.validate(value, opts);
+         }
+         return valid();
+      } else if (isSchema(_else)) {
+         return _else.validate(value, opts);
+      }
+   }
+   return valid();
+};
+
 /**
  * Strings
  */
@@ -324,8 +344,17 @@ export const additionalProperties = (
    return valid();
 };
 
+export const dependentRequired = (
+   s: TSchema,
+   value: unknown,
+   opts: Opts = {}
+) => {
+   // handled in required
+   return required(s, value, opts);
+};
+
 export const required = (
-   { required = [] }: TSchema,
+   { required = [], dependentRequired }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
@@ -333,6 +362,22 @@ export const required = (
    const keys = Object.keys(value).filter(
       (key) => typeof value[key] !== "function"
    );
+   if (isObject(dependentRequired)) {
+      for (const [key, deps] of Object.entries(dependentRequired)) {
+         if (keys.includes(key)) {
+            for (const dep of deps) {
+               if (!keys.includes(dep)) {
+                  return error(
+                     opts,
+                     "dependentRequired",
+                     `Expected dependent required property ${dep}`,
+                     value
+                  );
+               }
+            }
+         }
+      }
+   }
    if (required.every((key) => keys.includes(key))) return valid();
    return error(
       opts,

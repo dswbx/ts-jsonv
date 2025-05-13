@@ -1,5 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import { mergeAllOf } from "./merge-allof";
+import { fromSchema } from "../schema/from-schema";
 
 describe("mergeAllOf", () => {
    test("base", () => {
@@ -61,11 +62,14 @@ describe("mergeAllOf", () => {
       });
 
       console.log(
-         mergeAllOf({
-            allOf: [{ multipleOf: 2 }],
-            anyOf: [{ multipleOf: 3 }],
-            oneOf: [{ multipleOf: 5 }],
-         })
+         JSON.stringify(
+            fromSchema({
+               allOf: [{ properties: { foo: {} } }],
+               additionalProperties: { type: "boolean" },
+            }),
+            null,
+            2
+         )
       );
    });
 });

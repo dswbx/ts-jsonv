@@ -48,12 +48,12 @@ const skips: SkipFn[] = [
          // dependencies
          "dependencies",
          "dependentSchemas",
-         "dependentRequired",
+         //"dependentRequired",
          // conditional
          //"not",
-         "if",
-         "then",
-         "else",
+         //"if",
+         //"then",
+         //"else",
          // temporary
          //"allOf",
          "format-assertion",
@@ -70,8 +70,8 @@ const skips: SkipFn[] = [
       (test && [].some((s) => test.description.includes(s))) || false,
 ];
 
-const abort_early = false;
-const explain = false;
+const abort_early = true;
+const explain = true;
 
 for (const testSuite of tests) {
    console.log(c.cyan(`\n[TEST] ${testSuite.path}`));

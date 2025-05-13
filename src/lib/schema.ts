@@ -90,7 +90,7 @@ export interface TSchema<Type = unknown> extends TSchemaBase, TSchemaFn {
    minProperties?: number;
    maxProperties?: number;
    propertyNames?: TSchema;
-
+   dependentRequired?: { [key in PropertyName]: PropertyName[] };
    // Combining schemas
    allOf?: TSchema[];
    anyOf?: TSchema[];

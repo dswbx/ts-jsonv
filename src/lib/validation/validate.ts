@@ -29,6 +29,8 @@ import {
    anyOf,
    oneOf,
    not,
+   dependentRequired,
+   ifThenElse,
 } from "./keywords";
 import { format } from "./format";
 
@@ -56,6 +58,7 @@ export const keywords: Record<string, TKeywordFn> = {
    exclusiveMaximum,
    multipleOf,
    required,
+   dependentRequired,
    minProperties,
    maxProperties,
    propertyNames,
@@ -68,6 +71,7 @@ export const keywords: Record<string, TKeywordFn> = {
    contains,
    prefixItems,
    items,
+   if: ifThenElse,
 };
 
 export type ValidationOptions = {
@@ -93,11 +97,11 @@ export function validate(
 
    const todo = [
       //"readOnly",
-      "dependentRequired",
+      //"dependentRequired",
       "dependentSchemas",
-      "if",
-      "then",
-      "else",
+      //"if",
+      //"then",
+      //"else",
       "$ref",
       "$defs",
    ];
@@ -107,11 +111,7 @@ export function validate(
       }
    }
    // @todo: readOnly
-   // @todo: dependentRequired
    // @todo: dependentSchemas
-   // @todo: if
-   // @todo: then
-   // @todo: else
    // @todo: $ref
    // @todo: $defs
 

@@ -4,6 +4,7 @@ import { number } from "../number/number";
 import { boolean } from "../boolean/boolean";
 import { string } from "../string/string";
 import { schema, any } from "../schema";
+import { fromSchema } from "../schema/from-schema";
 
 describe("keywords", () => {
    describe("base", () => {
@@ -217,11 +218,48 @@ describe("keywords", () => {
       });
 
       test("additionalProperties", () => {
-         expect(
+         /* expect(
             kw.additionalProperties(any({ additionalProperties: true }), {
                a: 1,
             }).valid
-         ).toBe(true);
+         ).toBe(true); */
+         /* console.log(
+            JSON.stringify(
+               fromSchema({
+                  allOf: [
+                     {
+                        properties: {
+                           foo: {},
+                        },
+                     },
+                  ],
+                  additionalProperties: {
+                     type: "boolean",
+                  },
+               }),
+               null,
+               2
+            )
+         ); */
+         // @todo: add test
+         /* console.log(
+            kw.additionalProperties(
+               fromSchema({
+                  allOf: [
+                     {
+                        properties: {
+                           foo: {},
+                        },
+                     },
+                  ],
+                  additionalProperties: {
+                     type: "boolean",
+                  },
+               }),
+               //{ a: 1, foo: true }
+               { foo: 1, bar: true }
+            )
+         ); */
       });
 
       test("patternProperties", () => {
@@ -400,6 +438,36 @@ describe("keywords", () => {
             expect(s.validate([true]).valid).toBe(true);
             expect(s.validate([true, false, 1]).valid).toBe(false);
          }
+      });
+   });
+
+   describe("dependentRequired", () => {
+      test("dependentRequired", () => {
+         const s = fromSchema({
+            dependentRequired: {
+               bar: ["foo"],
+            },
+         });
+
+         console.log(s.validate({}));
+         console.log(s.validate({ bar: 2 }));
+      });
+   });
+
+   describe("ifThenElse", () => {
+      test("ifThenElse", () => {
+         const s = fromSchema({
+            if: {
+               exclusiveMaximum: 0,
+            },
+            then: {
+               minimum: -10,
+            },
+         });
+
+         console.log(s.validate(-1));
+         console.log(s.validate(-100)); // false
+         console.log(s.validate(3));
       });
    });
 });

@@ -2,6 +2,7 @@ import * as lib from "..";
 import * as unionFns from "../union/union";
 import { isObject, isTypeSchema, isArray, isBoolean, isSchema } from "../utils";
 import { InvalidRawSchemaError } from "../errors";
+import { mergeAllOf } from "../utils/merge-allof";
 
 function eachArray<T>(array: any | any[], fn: (item: any) => T): T[] {
    return Array.isArray(array)
@@ -22,11 +23,11 @@ function eachObject<T>(
 }
 
 export function fromSchema<Type = unknown>(_schema: any): lib.TSchema<Type> {
-   const schema = structuredClone(_schema);
-
-   if (isBoolean(schema)) {
-      return lib.schema(Boolean(schema)) as any;
+   if (isBoolean(_schema)) {
+      return lib.schema(Boolean(_schema)) as any;
    }
+
+   const schema = structuredClone(_schema);
 
    if (!isObject(schema)) {
       throw new InvalidRawSchemaError(
@@ -65,6 +66,9 @@ export function fromSchema<Type = unknown>(_schema: any): lib.TSchema<Type> {
       "propertyNames",
       "contains",
       "not",
+      "if",
+      "then",
+      "else",
    ];
    for (const key of schemaize) {
       if (key in schema && typeof schema[key] !== "undefined") {
@@ -76,13 +80,12 @@ export function fromSchema<Type = unknown>(_schema: any): lib.TSchema<Type> {
       }
    }
 
-   // @todo: allOf should resolve the full schema
    const unions = ["anyOf", "oneOf", "allOf"];
    for (const union of unions) {
       if (union in schema) {
          // @ts-ignore
-         const { [union]: _schemas, ...rest } = schema;
-         return unionFns[union](eachArray(_schemas, fromSchema), rest);
+         const { [union]: _schemas } = schema;
+         schema[union] = eachArray(_schemas, fromSchema);
       }
    }
 

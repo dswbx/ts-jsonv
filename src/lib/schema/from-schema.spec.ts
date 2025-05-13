@@ -202,5 +202,20 @@ describe("fromSchema", () => {
          expect(s.validate("foo").valid).toBe(true);
          expect(s.validate(123).valid).toBe(false);
       }
+
+      {
+         const s = fromSchema({
+            $schema: "https://json-schema.org/draft/2020-12/schema",
+            allOf: [{ multipleOf: 2 }],
+            anyOf: [{ multipleOf: 3 }],
+            oneOf: [{ multipleOf: 5 }],
+         });
+         expect(s.allOf?.[0]?.multipleOf).toEqual(2);
+         expect(s.allOf?.[0]?.[$kind]).toEqual("any");
+         expect(s.anyOf?.[0]?.multipleOf).toEqual(3);
+         expect(s.anyOf?.[0]?.[$kind]).toEqual("any");
+         expect(s.oneOf?.[0]?.multipleOf).toEqual(5);
+         expect(s.oneOf?.[0]?.[$kind]).toEqual("any");
+      }
    });
 });
