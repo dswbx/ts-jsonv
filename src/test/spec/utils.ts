@@ -3,15 +3,17 @@ import type { JSONSchema } from "../../lib/types";
 
 export async function getTestFiles(
    draft: string,
-   options: { skip?: RegExp[]; only?: RegExp[] } = {}
+   options: { skip?: RegExp[]; only?: RegExp[]; includeOptional?: boolean } = {}
 ) {
    const glob = new Glob("**/*.json");
    const files: string[] = [];
    const dir = `${import.meta.dir}/lib/${draft}`;
+   const includeOptional = options.includeOptional ?? false;
 
    for await (const file of glob.scan(dir)) {
       if (options.skip && options.skip.some((r) => r.test(file))) continue;
       if (options.only && !options.only.some((r) => r.test(file))) continue;
+      if (file.includes("optional/") && !includeOptional) continue;
       files.push(dir + "/" + file);
    }
    return files;

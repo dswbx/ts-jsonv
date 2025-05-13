@@ -29,7 +29,7 @@ const schemas = [
    },
 ] as const;
 
-function cleanSchema(schema: s.TSchema) {
+function cleanSchema(schema: any) {
    return JSON.parse(JSON.stringify(schema));
 }
 

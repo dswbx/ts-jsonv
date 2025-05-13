@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { type Static } from "../base";
+import { type Static } from "../static";
 import { $kind } from "../symbols";
 import { boolean } from "./boolean";
 import { assertJson } from "../assert";

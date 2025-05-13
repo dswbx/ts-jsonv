@@ -1,8 +1,8 @@
-import type { ValidationOptions } from "../base";
 import { InvalidTypeError } from "../errors";
-import type { TAny } from "../misc/any";
+import type { TSchema } from "../schema";
 import { isString } from "../utils";
 import { error, valid } from "../utils/details";
+import type { ValidationOptions } from "./validate";
 
 const DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 function date(str: string) {
@@ -28,7 +28,7 @@ const formats = {
 };
 
 export const format = (
-   { format }: TAny,
+   { format }: TSchema,
    value: unknown,
    opts: ValidationOptions = {}
 ) => {

@@ -1,5 +1,5 @@
-import type { TSchema, ValidationOptions, ValidationResult } from "../base";
-import { error, valid } from "../utils/details";
+import type { TSchema } from "../schema";
+import { error, valid, type ErrorDetail } from "../utils/details";
 import {
    _type,
    _const,
@@ -25,114 +25,119 @@ import {
    patternProperties,
    properties,
    propertyNames,
+   allOf,
+   anyOf,
+   oneOf,
+   not,
 } from "./keywords";
-import { InvalidTypeError } from "../errors";
-import type { TAny } from "../misc/any";
 import { format } from "./format";
 
-const defaultKeywords = {
+type TKeywordFn = (
+   schema: TSchema,
+   value: unknown,
+   opts: Omit<ValidationOptions, "coerce">
+) => ValidationResult;
+
+export const keywords: Record<string, TKeywordFn> = {
    type: _type,
    const: _const,
    enum: _enum,
-} as const;
-
-export const keywords: Record<
-   string,
-   Record<
-      string,
-      (
-         schema: TAny,
-         value: unknown,
-         opts: Omit<ValidationOptions, "coerce">
-      ) => ValidationResult
-   >
-> = {
-   string: {
-      ...defaultKeywords,
-      pattern,
-      minLength,
-      maxLength,
-      //format,
-   },
-   number: {
-      ...defaultKeywords,
-      multipleOf,
-      maximum,
-      exclusiveMaximum,
-      minimum,
-      exclusiveMinimum,
-   },
-   integer: {
-      ...defaultKeywords,
-      multipleOf,
-      maximum,
-      exclusiveMaximum,
-      minimum,
-      exclusiveMinimum,
-   },
-   boolean: {
-      ...defaultKeywords,
-   },
-   object: {
-      ...defaultKeywords,
-      required,
-      minProperties,
-      maxProperties,
-      propertyNames,
-      properties,
-      patternProperties,
-      additionalProperties,
-   },
-   array: {
-      ...defaultKeywords,
-      minItems,
-      maxItems,
-      uniqueItems,
-      contains,
-      prefixItems,
-      items,
-   },
+   allOf,
+   anyOf,
+   oneOf,
+   not,
+   minLength,
+   maxLength,
+   pattern,
+   //format,
+   minimum,
+   exclusiveMinimum,
+   maximum,
+   exclusiveMaximum,
+   multipleOf,
+   required,
+   minProperties,
+   maxProperties,
+   propertyNames,
+   properties,
+   patternProperties,
+   additionalProperties,
+   minItems,
+   maxItems,
+   uniqueItems,
+   contains,
+   prefixItems,
+   items,
 };
 
-export const allKeywords = {
-   ...defaultKeywords,
-   ...Object.fromEntries(
-      Object.values(keywords).flatMap((k) => Object.entries(k))
-   ),
+export type ValidationOptions = {
+   keywordPath?: string[];
+   instancePath?: string[];
+   coerce?: boolean;
+   errors?: ErrorDetail[];
+   exitOnFirstError?: boolean;
 };
 
-export function getTypeKeywords(schema: TSchema) {
-   const type = schema.type;
-   if (!type || type === undefined) return undefined;
-   const types = Array.isArray(type) ? type : [type];
-   return Object.fromEntries(
-      Object.entries(keywords)
-         .filter(([k]) => types.includes(k as any))
-         .flatMap(([, v]) => Object.entries(v))
-   );
-}
+export type ValidationResult = {
+   valid: boolean;
+   errors: ErrorDetail[];
+};
 
-export function validateTypeKeywords(
-   schema: TSchema,
-   value: unknown,
-   opts: Omit<ValidationOptions, "coerce"> = {}
+export function validate(
+   s: TSchema,
+   _value: unknown,
+   opts: ValidationOptions = {}
 ): ValidationResult {
-   const typeKeywords = getTypeKeywords(schema);
-   const fallback = typeKeywords === undefined;
-   const keywords = fallback ? allKeywords : typeKeywords;
+   let errors: ErrorDetail[] = opts?.errors || [];
+   const value = opts?.coerce ? s.coerce(_value) : _value;
 
-   for (const [keyword, validator] of Object.entries(keywords)) {
-      if (schema[keyword] === undefined) continue;
-      try {
-         const result = validator(schema, value, opts);
-         if (!result.valid) return result;
-      } catch (e) {
-         if (e instanceof InvalidTypeError) {
-            if (!fallback) {
-               return error(opts, keyword, e.message, value);
-            }
-         }
+   const todo = [
+      //"readOnly",
+      "dependentRequired",
+      "dependentSchemas",
+      "if",
+      "then",
+      "else",
+      "$ref",
+      "$defs",
+   ];
+   for (const item of todo) {
+      if (s[item]) {
+         throw new Error(`${item} not implemented`);
       }
    }
-   return valid();
+   // @todo: readOnly
+   // @todo: dependentRequired
+   // @todo: dependentSchemas
+   // @todo: if
+   // @todo: then
+   // @todo: else
+   // @todo: $ref
+   // @todo: $defs
+
+   for (const [keyword, validator] of Object.entries(keywords)) {
+      if (s[keyword] === undefined) continue;
+      const result = validator(s, value, {
+         ...opts,
+         errors,
+      });
+      if (!result.valid) {
+         if (opts.exitOnFirstError) {
+            return result;
+         }
+         errors = result.errors;
+      }
+   }
+
+   if (s.validate) {
+      const result = s.validate(value, opts);
+      if (!result.valid) {
+         errors = result.errors;
+      }
+   }
+
+   return {
+      valid: errors.length === 0,
+      errors,
+   };
 }

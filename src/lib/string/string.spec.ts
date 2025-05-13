@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { type Static } from "../base";
+import { type Static } from "../static";
 import { string, stringConst } from "./string";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -14,13 +14,34 @@ describe("string", () => {
       assertJson(string(), { type: "string" });
    });
 
+   test("options & type inference", () => {
+      {
+         // @ts-expect-error maxLength must be a number
+         string({ maxLength: "1" });
+      }
+
+      const schema = string({
+         minLength: 1,
+         pattern: "/a/",
+      });
+
+      expectTypeOf<(typeof schema)["pattern"]>().toEqualTypeOf<"/a/">();
+      expectTypeOf<(typeof schema)["minLength"]>().toEqualTypeOf<1>();
+
+      // @ts-expect-error maxLength is not defined
+      schema.maxLength;
+
+      // @ts-expect-error $id is not defined
+      schema.$id;
+   });
+
    test("with const", () => {
       const schema = string({ const: "hello" });
 
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<"hello">();
 
-      assertJson(string({ const: "hello" }), {
+      assertJson(schema, {
          type: "string",
          const: "hello",
       });
@@ -31,7 +52,7 @@ describe("string", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<"a" | "b" | "c">();
 
-      assertJson(string({ enum: ["a", "b", "c"] }), {
+      assertJson(schema, {
          type: "string",
          enum: ["a", "b", "c"],
       });
@@ -53,11 +74,12 @@ describe("string", () => {
    });
 
    test("stringConst", () => {
-      const schema = stringConst({ const: "hello" });
+      const schema = stringConst("hello", { $id: "test" });
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<"hello">();
 
       assertJson(schema, {
+         $id: "test",
          type: "string",
          const: "hello",
          default: "hello",
@@ -77,7 +99,7 @@ describe("string", () => {
       });
 
       test("const", () => {
-         const schema = stringConst({ const: "hello" });
+         const schema = stringConst("hello");
          expect(schema.validate("hello").valid).toBe(true);
          expect(schema.validate("world").errors[0]?.keywordLocation).toEqual(
             "/const"

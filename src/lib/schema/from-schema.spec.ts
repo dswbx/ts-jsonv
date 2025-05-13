@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { fromSchema } from "./from-schema";
-import type { TSchema } from "../base";
+import type { TSchema } from "../schema";
 import { $kind, $optional } from "../symbols";
 
 const expectType = (
@@ -18,14 +18,14 @@ const expectType = (
 
 describe("fromSchema", () => {
    test("base", () => {
-      expectType(fromSchema({ type: "string" } as const), "string");
+      expectType(fromSchema({ type: "string" }), "string");
       expectType(
          fromSchema({
             type: "string",
             maxLength: 10,
             minLength: 1,
             pattern: "/a/",
-         } as const),
+         }),
          "string",
          {
             maxLength: 10,
@@ -33,7 +33,7 @@ describe("fromSchema", () => {
             pattern: "/a/",
          }
       );
-      expectType(fromSchema({ type: "number" } as const), "number");
+      expectType(fromSchema({ type: "number" }), "number");
       expectType(
          fromSchema({
             type: "number",
@@ -42,7 +42,7 @@ describe("fromSchema", () => {
             minimum: 1,
             exclusiveMinimum: 1,
             maximum: 2,
-         } as const),
+         }),
          "number",
          {
             exclusiveMaximum: 1,
@@ -52,8 +52,8 @@ describe("fromSchema", () => {
             exclusiveMinimum: 1,
          }
       );
-      expectType(fromSchema({ type: "integer" } as const), "integer");
-      expectType(fromSchema({ type: "boolean" } as const), "boolean");
+      expectType(fromSchema({ type: "integer" }), "integer");
+      expectType(fromSchema({ type: "boolean" }), "boolean");
    });
 
    test("objects", () => {
@@ -61,7 +61,7 @@ describe("fromSchema", () => {
          fromSchema({
             type: "object",
             properties: { name: { type: "string" } },
-         } as const),
+         }),
          "object"
       );
    });
@@ -70,7 +70,7 @@ describe("fromSchema", () => {
       const schema = fromSchema({
          type: "array",
          items: { type: "string" },
-      } as const);
+      });
 
       schema.contains;
 
@@ -90,13 +90,13 @@ describe("fromSchema", () => {
    test("boolean schema", () => {
       {
          const s = fromSchema(true);
-         expect(s[$kind]).toEqual("booleanSchema");
+         expect(s[$kind]).toEqual("any");
          expect(s.validate(true).valid).toBe(true);
          expect(s.validate(false).valid).toBe(true);
       }
       {
          const s = fromSchema(false);
-         expect(s[$kind]).toEqual("booleanSchema");
+         expect(s[$kind]).toEqual("any");
          expect(s.validate(true).valid).toBe(false);
          expect(s.validate(false).valid).toBe(false);
       }
@@ -126,7 +126,7 @@ describe("fromSchema", () => {
          expect(s.properties?.foo?.[$kind]).toEqual("any");
          expect(s.properties?.bar?.[$kind]).toEqual("any");
          expect(s.patternProperties?.["^v"]?.[$kind]).toEqual("any");
-         expect(s.additionalProperties?.[$kind]).toEqual("booleanSchema");
+         expect(s.additionalProperties?.[$kind]).toEqual("any");
       }
 
       {
@@ -137,8 +137,8 @@ describe("fromSchema", () => {
             },
             required: ["bar"],
          });
-         expect(s.properties?.bar?.[$kind]).toEqual("booleanSchema");
-         expect(s.properties?.baz?.[$kind]).toEqual("booleanSchema");
+         expect(s.properties?.bar?.[$kind]).toEqual("any");
+         expect(s.properties?.baz?.[$kind]).toEqual("any");
          expect(s.properties?.baz?.[$optional]).toEqual(true);
          expect(s.required).toEqual(["bar"]);
       }
@@ -163,21 +163,15 @@ describe("fromSchema", () => {
             ],
          });
          // @ts-ignore
-         expect(s.oneOf?.[0]?.properties?.bar?.[$kind]).toEqual(
-            "booleanSchema"
-         );
+         expect(s.oneOf?.[0]?.properties?.bar?.[$kind]).toEqual("any");
          // @ts-ignore
-         expect(s.oneOf?.[0]?.properties?.baz?.[$kind]).toEqual(
-            "booleanSchema"
-         );
+         expect(s.oneOf?.[0]?.properties?.baz?.[$kind]).toEqual("any");
          // @ts-ignore
          expect(s.oneOf?.[0]?.properties?.baz?.[$optional]).toEqual(true);
          // @ts-ignore
          expect(s.oneOf?.[0]?.required).toEqual(["bar"]);
          // @ts-ignore
-         expect(s.oneOf?.[1]?.properties?.foo?.[$kind]).toEqual(
-            "booleanSchema"
-         );
+         expect(s.oneOf?.[1]?.properties?.foo?.[$kind]).toEqual("any");
          // @ts-ignore
          expect(s.oneOf?.[1]?.required).toEqual(["foo"]);
       }
@@ -199,6 +193,14 @@ describe("fromSchema", () => {
          expect(s.properties?.alpha?.default).toEqual(5);
          // @ts-ignore
          expect(s.properties?.alpha?.maximum).toEqual(3);
+      }
+
+      {
+         const s = fromSchema({
+            not: { type: "integer" },
+         });
+         expect(s.validate("foo").valid).toBe(true);
+         expect(s.validate(123).valid).toBe(false);
       }
    });
 });

@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { type Static, type TSchema } from "../base";
+import { type Static } from "../static";
 import { ref } from "./ref";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";

@@ -1,6 +1,7 @@
 import type { Env, Input, MiddlewareHandler, ValidationTargets } from "hono";
 import { validator } from "hono/validator";
-import type { Static, TSchema } from "../lib/base";
+import type { Static } from "../lib/static";
+import type { TSchema } from "../lib/schema";
 
 export const jscValidator = <
    Target extends keyof ValidationTargets,

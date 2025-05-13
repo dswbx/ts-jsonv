@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import * as kw from "./keywords";
 import { number } from "../number/number";
-import { any } from "../misc/any";
 import { boolean } from "../boolean/boolean";
 import { string } from "../string/string";
-import { booleanSchema } from "../misc/misc";
+import { schema, any } from "../schema";
+
 describe("keywords", () => {
    describe("base", () => {
       test("type", () => {
@@ -62,6 +62,13 @@ describe("keywords", () => {
          expect(kw._enum(any({ enum: [true, false] }), true).valid).toBe(true);
          expect(kw._enum(any({ enum: [true, false] }), null).valid).toBe(false);
       });
+
+      test("not", () => {
+         expect(kw.not(any({ not: string() }), "hello").valid).toBe(false);
+         expect(kw.not(any({ not: string() }), 123).valid).toBe(true);
+         expect(kw.not(any({ not: string() }), null).valid).toBe(true);
+         expect(kw.not(any({ not: string() }), undefined).valid).toBe(true);
+      });
    });
 
    describe("string", () => {
@@ -76,14 +83,14 @@ describe("keywords", () => {
          expect(kw.pattern(any({ pattern: "/\\d+/" }), "abc").valid).toBe(
             false
          );
-         expect(() => kw.pattern(any({ pattern: "/invalid" }), 123)).toThrow();
+         expect(kw.pattern(any({ pattern: "/invalid" }), 123).valid).toBe(true);
       });
 
       test("minLength", () => {
          expect(kw.minLength(any({ minLength: 3 }), "hello").valid).toBe(true);
          expect(kw.minLength(any({ minLength: 3 }), "hi").valid).toBe(false);
          expect(kw.minLength(any({ minLength: 0 }), "").valid).toBe(true);
-         expect(() => kw.minLength(any({ minLength: 3 }), 123)).toThrow();
+         expect(kw.minLength(any({ minLength: 3 }), 123).valid).toBe(true);
       });
 
       test("maxLength", () => {
@@ -92,7 +99,7 @@ describe("keywords", () => {
             false
          );
          expect(kw.maxLength(any({ maxLength: 0 }), "").valid).toBe(true);
-         expect(() => kw.maxLength(any({ maxLength: 5 }), 123)).toThrow();
+         expect(kw.maxLength(any({ maxLength: 5 }), 123).valid).toBe(true);
       });
    });
 
@@ -102,14 +109,14 @@ describe("keywords", () => {
          expect(kw.multipleOf(any({ multipleOf: 2 }), 5).valid).toBe(false);
          expect(kw.multipleOf(any({ multipleOf: 0.5 }), 1.5).valid).toBe(true);
          expect(kw.multipleOf(any({ multipleOf: 0.5 }), 1.7).valid).toBe(false);
-         expect(() => kw.multipleOf(any({ multipleOf: 2 }), "4")).toThrow();
+         expect(kw.multipleOf(any({ multipleOf: 2 }), "4").valid).toBe(true);
       });
 
       test("maximum", () => {
          expect(kw.maximum(any({ maximum: 5 }), 4).valid).toBe(true);
          expect(kw.maximum(any({ maximum: 5 }), 5).valid).toBe(true);
          expect(kw.maximum(any({ maximum: 5 }), 6).valid).toBe(false);
-         expect(() => kw.maximum(any({ maximum: 5 }), "4")).toThrow();
+         expect(kw.maximum(any({ maximum: 5 }), "4").valid).toBe(true);
       });
 
       test("exclusiveMaximum", () => {
@@ -122,16 +129,16 @@ describe("keywords", () => {
          expect(
             kw.exclusiveMaximum(any({ exclusiveMaximum: 5 }), 6).valid
          ).toBe(false);
-         expect(() =>
-            kw.exclusiveMaximum(any({ exclusiveMaximum: 5 }), "4")
-         ).toThrow();
+         expect(
+            kw.exclusiveMaximum(any({ exclusiveMaximum: 5 }), "4").valid
+         ).toBe(true);
       });
 
       test("minimum", () => {
          expect(kw.minimum(any({ minimum: 5 }), 6).valid).toBe(true);
          expect(kw.minimum(any({ minimum: 5 }), 5).valid).toBe(true);
          expect(kw.minimum(any({ minimum: 5 }), 4).valid).toBe(false);
-         expect(() => kw.minimum(any({ minimum: 5 }), "6")).toThrow();
+         expect(kw.minimum(any({ minimum: 5 }), "6").valid).toBe(true);
       });
 
       test("exclusiveMinimum", () => {
@@ -144,9 +151,9 @@ describe("keywords", () => {
          expect(
             kw.exclusiveMinimum(any({ exclusiveMinimum: 5 }), 4).valid
          ).toBe(false);
-         expect(() =>
-            kw.exclusiveMinimum(any({ exclusiveMinimum: 5 }), "6")
-         ).toThrow();
+         expect(
+            kw.exclusiveMinimum(any({ exclusiveMinimum: 5 }), "6").valid
+         ).toBe(true);
       });
    });
 
@@ -159,9 +166,10 @@ describe("keywords", () => {
             kw.properties(any({ properties: { a: number() } }), { a: 1, b: 2 })
                .valid
          ).toBe(true);
-         expect(() =>
+         expect(
             kw.properties(any({ properties: { a: number() } }), "not an object")
-         ).toThrow();
+               .valid
+         ).toBe(true);
       });
 
       test("required", () => {
@@ -172,9 +180,9 @@ describe("keywords", () => {
             kw.required(any({ required: ["a", "b"] }), { a: 1 }).valid
          ).toBe(false);
          expect(kw.required(any({ required: [] }), {}).valid).toBe(true);
-         expect(() =>
-            kw.required(any({ required: ["a"] }), "not an object")
-         ).toThrow();
+         expect(
+            kw.required(any({ required: ["a"] }), "not an object").valid
+         ).toBe(true);
       });
 
       test("minProperties", () => {
@@ -187,9 +195,9 @@ describe("keywords", () => {
          expect(kw.minProperties(any({ minProperties: 0 }), {}).valid).toBe(
             true
          );
-         expect(() =>
-            kw.minProperties(any({ minProperties: 2 }), "not an object")
-         ).toThrow();
+         expect(
+            kw.minProperties(any({ minProperties: 2 }), "not an object").valid
+         ).toBe(true);
       });
 
       test("maxProperties", () => {
@@ -203,9 +211,9 @@ describe("keywords", () => {
          expect(kw.maxProperties(any({ maxProperties: 0 }), {}).valid).toBe(
             true
          );
-         expect(() =>
-            kw.maxProperties(any({ maxProperties: 2 }), "not an object")
-         ).toThrow();
+         expect(
+            kw.maxProperties(any({ maxProperties: 2 }), "not an object").valid
+         ).toBe(true);
       });
 
       test("additionalProperties", () => {
@@ -265,8 +273,7 @@ describe("keywords", () => {
          expect(
             kw.propertyNames(
                any({
-                  // @ts-expect-error hard to type well
-                  propertyNames: booleanSchema(false),
+                  propertyNames: schema(false),
                }),
                { foo: 1 }
             ).valid
@@ -280,27 +287,27 @@ describe("keywords", () => {
          expect(kw.items(any({ items: number() }), ["a", "b"]).valid).toBe(
             false
          );
-         expect(() =>
-            kw.items(any({ items: number() }), "not an array")
-         ).toThrow();
+         expect(kw.items(any({ items: number() }), "not an array").valid).toBe(
+            true
+         );
       });
 
       test("minItems", () => {
          expect(kw.minItems(any({ minItems: 2 }), [1, 2]).valid).toBe(true);
          expect(kw.minItems(any({ minItems: 2 }), [1]).valid).toBe(false);
          expect(kw.minItems(any({ minItems: 0 }), []).valid).toBe(true);
-         expect(() =>
-            kw.minItems(any({ minItems: 2 }), "not an array")
-         ).toThrow();
+         expect(kw.minItems(any({ minItems: 2 }), "not an array").valid).toBe(
+            true
+         );
       });
 
       test("maxItems", () => {
          expect(kw.maxItems(any({ maxItems: 2 }), [1, 2]).valid).toBe(true);
          expect(kw.maxItems(any({ maxItems: 2 }), [1, 2, 3]).valid).toBe(false);
          expect(kw.maxItems(any({ maxItems: 0 }), []).valid).toBe(true);
-         expect(() =>
-            kw.maxItems(any({ maxItems: 2 }), "not an array")
-         ).toThrow();
+         expect(kw.maxItems(any({ maxItems: 2 }), "not an array").valid).toBe(
+            true
+         );
       });
 
       test("uniqueItems", () => {
@@ -319,9 +326,9 @@ describe("keywords", () => {
                { foo: "bar" },
             ]).valid
          ).toBe(false);
-         expect(() =>
-            kw.uniqueItems(any({ uniqueItems: true }), "not an array")
-         ).toThrow();
+         expect(
+            kw.uniqueItems(any({ uniqueItems: true }), "not an array").valid
+         ).toBe(true);
       });
 
       test("contains", () => {
@@ -332,9 +339,9 @@ describe("keywords", () => {
          expect(kw.contains(any({ contains: s }), ["a", "b"]).valid).toBe(
             false
          );
-         expect(() =>
-            kw.contains(any({ contains: s }), "not an array")
-         ).toThrow();
+         expect(kw.contains(any({ contains: s }), "not an array").valid).toBe(
+            true
+         );
 
          expect(
             kw.contains(any({ contains: number(), minContains: 2 }), [
@@ -346,12 +353,12 @@ describe("keywords", () => {
          expect(
             kw.contains(any({ contains: number(), minContains: 2 }), [1]).valid
          ).toBe(false);
-         expect(() =>
+         expect(
             kw.contains(
                any({ contains: number(), minContains: 2 }),
                "not an array"
-            )
-         ).toThrow();
+            ).valid
+         ).toBe(true);
 
          /* expect(
             kw.contains(any({ contains: number(), maxContains: 2 }), [
@@ -363,12 +370,12 @@ describe("keywords", () => {
          expect(
             kw.contains(any({ contains: number(), maxContains: 2 }), [1]).valid
          ).toBe(true);
-         expect(() =>
+         expect(
             kw.contains(
                any({ contains: number(), maxContains: 2 }),
                "not an array"
-            )
-         ).toThrow();
+            ).valid
+         ).toBe(true);
       });
 
       test("prefixItems", () => {
@@ -386,7 +393,7 @@ describe("keywords", () => {
          {
             // prefixItems with items false
             const s = any({
-               items: false,
+               items: schema(false),
                prefixItems: [boolean(), boolean()],
             });
             expect(s.validate([true, false]).valid).toBe(true);

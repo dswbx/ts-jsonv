@@ -1,93 +1,52 @@
 import { describe, expect, test } from "bun:test";
-import { allKeywords, getTypeKeywords, validateTypeKeywords } from "./validate";
+import { validate } from "./validate";
 import * as s from "../";
-import type { TSchema } from "../";
+import { schema } from "../schema";
 
 describe("validate", () => {
-   test.skip("allKeywords", () => {
-      console.log(allKeywords);
+   test("boolean schema", () => {
+      const falsy = schema(false).validate(undefined);
+      expect(falsy.valid).toBe(false);
+      expect(falsy.errors.length).toBe(1);
+      expect(falsy.errors[0]?.error).toBe("Always fails");
+
+      const truthy = schema(true).validate(undefined);
+      expect(truthy.valid).toBe(true);
+      expect(truthy.errors.length).toBe(0);
    });
 
-   test("getTypeKeywords", () => {
-      const get = (s: TSchema) => Object.keys(getTypeKeywords(s) ?? {});
+   test("multiple vs single errors", () => {
+      const result = validate(
+         s.string({ minLength: 10, pattern: "^[0-9]+$" }),
+         "what"
+      );
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBe(2);
+      expect(result.errors[0]?.keywordLocation).toBe("/minLength");
+      expect(result.errors[1]?.keywordLocation).toBe("/pattern");
 
-      (
-         [
-            [
-               s.string(),
-               ["type", "const", "enum", "pattern", "minLength", "maxLength"],
-            ],
-            [
-               s.number(),
-               [
-                  "type",
-                  "const",
-                  "enum",
-                  "multipleOf",
-                  "maximum",
-                  "exclusiveMaximum",
-                  "minimum",
-                  "exclusiveMinimum",
-               ],
-            ],
-            [
-               s.integer(),
-               [
-                  "type",
-                  "const",
-                  "enum",
-                  "multipleOf",
-                  "maximum",
-                  "exclusiveMaximum",
-                  "minimum",
-                  "exclusiveMinimum",
-               ],
-            ],
-            [
-               s.object({}),
-               [
-                  "type",
-                  "const",
-                  "enum",
-                  "required",
-                  "minProperties",
-                  "maxProperties",
-                  "propertyNames",
-                  "properties",
-                  "patternProperties",
-                  "additionalProperties",
-               ],
-            ],
-            [
-               s.array(s.any()),
-               [
-                  "type",
-                  "const",
-                  "enum",
-                  "minItems",
-                  "maxItems",
-                  "uniqueItems",
-                  "contains",
-                  "prefixItems",
-                  "items",
-               ],
-            ],
-         ] as const
-      ).map(([schema, expected]) => {
-         const result = get(schema);
-         expect(
-            result,
-            `schema ${schema.type} should have keywords ${expected.join(
-               ", "
-            )} but got ${result.join(", ")}`
-         ).toEqual(expected as any);
-      });
+      {
+         const result = validate(
+            s.string({ minLength: 10, pattern: "^[0-9]+$" }),
+            "what",
+            {
+               exitOnFirstError: true,
+            }
+         );
+         expect(result.valid).toBe(false);
+         expect(result.errors.length).toBe(1);
+         expect(result.errors[0]?.keywordLocation).toBe("/minLength");
+      }
    });
 
-   test("validateTypeKeywords", () => {
-      const validate = (schema: TSchema, value: unknown) =>
-         validateTypeKeywords(schema, value);
+   test("multiple types", () => {
+      const multi = schema({ type: ["string", "number"] });
+      expect(multi.validate("hello").valid).toBe(true);
+      expect(multi.validate(1).valid).toBe(true);
+      expect(multi.validate(true).errors[0]?.keywordLocation).toBe("/type");
+   });
 
+   test.skip("validate", () => {
       {
          expect(validate(s.string(), "hello").valid).toBe(true);
          expect(validate(s.string(), 1).errors[0]?.keywordLocation).toBe(

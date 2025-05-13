@@ -1,19 +1,27 @@
-import { create, type Static, type TSchema } from "../base";
+import {
+   type TCustomSchema,
+   type TSchema,
+   type TSchemaBase,
+   schema,
+} from "../schema";
+import { type Static } from "../static";
 
-export interface Ref<T extends TSchema> extends TSchema {
+export type TRef<T extends TSchema> = TCustomSchema<TSchemaBase, Static<T>> & {
    $ref: string;
-   static: Static<T>;
-}
+};
 
 export const ref = <T extends TSchema>(
-   schema: T,
+   ref: T,
    prefix: "$defs" | "definitions" = "$defs"
-) => {
-   if (!schema.$id) {
+): TRef<T> => {
+   if (!ref.$id) {
       throw new Error("Schema must have a $id");
    }
 
-   return create<Ref<T>>("ref", {
-      $ref: `#/${prefix}/${schema.$id}`,
-   });
+   return schema(
+      {
+         $ref: `#/${prefix}/${ref.$id}`,
+      },
+      "ref"
+   );
 };

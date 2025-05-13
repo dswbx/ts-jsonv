@@ -1,36 +1,51 @@
 import {
-   type StaticConstEnum,
-   type TSchema,
-   type TSchemaWithFn,
-   create,
-} from "../base";
-import type { NumberSchema } from "../types";
+   schema,
+   type TCustomSchema,
+   type TSchemaBase,
+   type TSchemaFn,
+} from "../schema";
 
-export interface TNumber<S extends NumberSchema>
-   extends TSchema<"number">,
-      NumberSchema {
-   static: StaticConstEnum<S, number>;
+export interface NumberSchema extends TSchemaBase, Partial<TSchemaFn> {
+   multipleOf?: number;
+   maximum?: number;
+   exclusiveMaximum?: number;
+   minimum?: number;
+   exclusiveMinimum?: number;
 }
 
-export const number = <const S extends TSchemaWithFn<NumberSchema>>(
-   schema?: S
-) =>
-   create<TNumber<S>>("number", {
-      coerce: (value) => Number(value),
-      template,
-      ...schema,
-      type: "number",
-   });
+export type TNumber<O extends NumberSchema> = TCustomSchema<O, number>;
 
-export const integer = <const S extends TSchemaWithFn<NumberSchema>>(
-   schema?: S
-) =>
-   create<TNumber<S>>("integer", {
-      coerce: (value) => Number(value),
-      template,
-      ...schema,
-      type: "integer",
-   });
+/* export interface TNumber<O extends NumberSchema>
+   extends TSchema<number>,
+      TSchemaFn {
+   static: StaticConstEnum<O, number>;
+}*/
+
+export const number = <const S extends NumberSchema>(
+   config: S = {} as S
+): TNumber<S> =>
+   schema(
+      {
+         coerce: (value: unknown) => Number(value),
+         template,
+         ...config,
+         type: "number",
+      },
+      "number"
+   ) as any;
+
+export const integer = <const S extends NumberSchema>(
+   config: S = {} as S
+): TNumber<S> =>
+   schema(
+      {
+         coerce: (value: unknown) => Number(value),
+         template,
+         ...config,
+         type: "integer",
+      },
+      "integer"
+   ) as any;
 
 function template(this: NumberSchema) {
    if (this.minimum) return this.minimum;

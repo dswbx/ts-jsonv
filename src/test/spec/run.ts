@@ -5,7 +5,7 @@ import c from "picocolors";
 import { isArray, isObject } from "../../lib/utils";
 import type { JSONSchema } from "../../lib/types";
 
-const files = await getTestFiles("draft2020-12");
+const files = await getTestFiles("draft2020-12", { includeOptional: false });
 
 const tests: (Awaited<ReturnType<typeof loadTest>> & { path: string })[] = [];
 for (const file of files) {
@@ -50,12 +50,12 @@ const skips: SkipFn[] = [
          "dependentSchemas",
          "dependentRequired",
          // conditional
-         "not",
+         //"not",
          "if",
          "then",
          "else",
          // temporary
-         "allOf",
+         //"allOf",
          "format-assertion",
          "non-bmp-regex",
          "float-overflow",
@@ -63,15 +63,15 @@ const skips: SkipFn[] = [
       ].some((k) => file.includes(k) || recurisvelyHasKeys(schema, [k])),
 
    // skip array-types
-   ({ schema }) => isObject(schema) && "type" in schema && isArray(schema.type),
+   //({ schema }) => isObject(schema) && "type" in schema && isArray(schema.type),
 
    // skip specific tests
    ({ test }) =>
       (test && [].some((s) => test.description.includes(s))) || false,
 ];
 
-const abort_early = true;
-const explain = true;
+const abort_early = false;
+const explain = false;
 
 for (const testSuite of tests) {
    console.log(c.cyan(`\n[TEST] ${testSuite.path}`));
@@ -102,7 +102,7 @@ for (const testSuite of tests) {
             ) {
                stats.skipped++;
                console.log(
-                  c.dim(`  -> ${c.yellow("[S1KIPPED]")} ${test.description}`)
+                  c.dim(`  -> ${c.yellow("[SKIPPED]")} ${test.description}`)
                );
                continue;
             }
@@ -119,7 +119,11 @@ for (const testSuite of tests) {
                stats.passed++;
             } catch (e) {
                const result = e instanceof Error ? undefined : e;
-               console.error("  ->", "[ERR]", test.description);
+               console.error(
+                  "  ->",
+                  e instanceof Error ? "[ERR]" : "[FAIL]",
+                  test.description
+               );
                explain &&
                   console.log({
                      result,

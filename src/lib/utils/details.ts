@@ -1,4 +1,7 @@
-import type { ValidationOptions, ValidationResult } from "../base";
+import type {
+   ValidationOptions,
+   ValidationResult,
+} from "../validation/validate";
 import { toJsonPointer } from "./path";
 
 export type ErrorDetail = {
@@ -17,6 +20,7 @@ export const error = (
    return {
       valid: false,
       errors: [
+         ...(opts.errors ?? []),
          {
             keywordLocation: toJsonPointer([
                ...(opts.keywordPath ?? []),

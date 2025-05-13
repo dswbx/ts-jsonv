@@ -1,42 +1,57 @@
 import {
-   type Static,
    type TSchema,
+   type TOptional,
+   type TSchemaBase,
+   type TSchemaFn,
    type TSchemaTemplateOptions,
-   type TSchemaWithFn,
-   type ValidationOptions,
-   type ValidationResult,
-   create,
-} from "../base";
+   schema,
+   type TAnySchema,
+   type TCustomSchema,
+} from "../schema";
+import type { Static, StaticConstEnum } from "../static";
 import { $optional } from "../symbols";
-import type { ObjectSchema } from "../types";
 import { invariant, isObject, isSchema, isValidPropertyName } from "../utils";
-import { error, makeOpts, valid } from "../utils/details";
 
-export type TPropertyKey = string;
-export type TProperties = Record<TPropertyKey, TSchema>;
+export type PropertyName = string;
+export type TProperties = { [key in PropertyName]: TAnySchema | TOptional };
 
 type ObjectStatic<T extends TProperties> = {
    [K in keyof T]: Static<T[K]>;
 };
 
-export interface TObject<T extends TProperties>
-   extends TSchema<"object">,
-      ObjectSchema<TSchema> {
-   type: "object";
-   properties: T;
-   static: ObjectStatic<T>;
-   required?: string[] | undefined;
+export interface ObjectSchema extends TSchemaBase, Partial<TSchemaFn> {
+   patternProperties?: { [key: string]: TAnySchema };
+   additionalProperties?: TAnySchema | boolean;
+   minProperties?: number;
+   maxProperties?: number;
+   propertyNames?: TAnySchema;
 }
 
-export const object = <
+/* export interface TObject<P extends TProperties, O extends ObjectSchema>
+   extends Omit<TSchema<object>, "properties">,
+      TSchemaFn {
+   static: StaticConstEnum<O, ObjectStatic<P>>;
+   properties: P;
+} */
+
+export type TObject<
    P extends TProperties,
-   O extends TSchemaWithFn<
-      Omit<ObjectSchema<TSchema>, "properties" | "required">
-   >
->(
+   O extends ObjectSchema
+> = TCustomSchema<O, ObjectStatic<P>> & {
+   properties: P;
+};
+/*    
+type TObject<P extends TProperties, O extends ObjectSchema> = {
+   static: StaticConstEnum<O, ObjectStatic<P>>;
+   properties: P;
+} & {
+   [K in keyof O]: O[K];
+} & TSchemaFn; */
+
+export const object = <P extends TProperties, const O extends ObjectSchema>(
    properties: P,
-   options?: O
-) => {
+   options: O = {} as O
+): TObject<P, O> => {
    for (const key of Object.keys(properties || {})) {
       invariant(isValidPropertyName(key), "invalid property name", key);
       invariant(
@@ -50,87 +65,90 @@ export const object = <
       .filter(([, value]) => !($optional in value))
       .map(([key]) => key);
 
-   return create<TObject<P>>("object", {
-      template,
-      coerce,
-      ...options,
-      type: "object",
-      properties,
-      required: required.length > 0 ? required : undefined,
-   });
+   return schema(
+      {
+         template,
+         coerce,
+         ...options,
+         type: "object",
+         properties,
+         required: required.length > 0 ? required : undefined,
+      } as any,
+      "object"
+   );
 };
 
 export const strictObject = <
    P extends TProperties,
-   O extends TSchemaWithFn<
-      Omit<ObjectSchema<TSchema, TSchema, false>, "properties" | "required">
-   >
+   const O extends ObjectSchema & { additionalProperties?: false }
 >(
    properties: P,
-   options?: O
-) => {
+   options: O = {} as O
+): TObject<P, O> => {
    return object(properties, {
       ...options,
       additionalProperties: false,
-   });
+   }) as any;
+};
+
+export type TPartialObject<
+   P extends TProperties,
+   O extends ObjectSchema
+> = TCustomSchema<O, PartialObjectStatic<P>> & {
+   properties: P;
 };
 
 type PartialObjectStatic<T extends TProperties> = {
    [K in keyof T]: Static<T[K]> | undefined;
 };
 
-export interface TPartialObject<T extends TProperties>
-   extends TSchema<"object">,
-      ObjectSchema {
-   type: "object";
-   properties: T;
-   static: PartialObjectStatic<T>;
-}
-
 export const partialObject = <
    P extends TProperties,
-   O extends TSchemaWithFn<Omit<ObjectSchema, "properties" | "required">>
+   const O extends ObjectSchema
 >(
    properties: P,
-   options?: O
-) => {
-   return create<TPartialObject<P>>("object", {
-      template,
-      coerce,
+   options: O = {} as O
+): TPartialObject<P, O> => {
+   const partial = Object.fromEntries(
+      Object.entries(properties).map(([key, value]) => [
+         key,
+         // @ts-ignore
+         "optional" in value ? value.optional() : value,
+      ])
+   );
+
+   return object(partial, {
       ...options,
-      type: "object",
-      properties,
-   });
+      additionalProperties: false,
+   }) as any;
 };
 
-export interface TRecord<T extends TProperties>
-   extends TSchema<"object">,
-      ObjectSchema {
-   type: "object";
-   additionalProperties: TObject<T>;
-   static: Record<string, Static<TObject<T>>>;
-}
+type RecordStatic<T extends TProperties> = Record<
+   string,
+   Static<{ static: ObjectStatic<T> }>
+>;
 
 export const record = <
    P extends TProperties,
-   O extends TSchemaWithFn<
-      Omit<ObjectSchema, "required" | "additionalProperties">
-   >
+   const O extends ObjectSchema & { additionalProperties: never }
 >(
    properties: P,
-   options?: O,
-   apOptions?: Omit<ObjectSchema<TSchema>, "properties" | "required">
+   options: O = {} as O,
+   apOptions?: Omit<ObjectSchema, "properties" | "required">
 ) => {
-   return create<TRecord<P>>("object", {
-      template,
-      coerce,
-      ...options,
-      type: "object",
-      additionalProperties: object(properties, apOptions),
-   });
+   return schema<RecordStatic<P>, O & { additionalProperties: P }>(
+      {
+         template,
+         coerce,
+         ...options,
+         type: "object",
+         additionalProperties: object(properties, apOptions),
+      },
+      "object"
+   );
 };
 
-function template(this: ObjectSchema, opts: TSchemaTemplateOptions = {}) {
+function template(this: TSchema, opts: TSchemaTemplateOptions = {}) {
    if (this.default) return this.default;
    if (this.const) return this.const;
 
@@ -158,7 +176,7 @@ function template(this: ObjectSchema, opts: TSchemaTemplateOptions = {}) {
    return result;
 }
 
-function coerce(this: ObjectSchema, _value: unknown) {
+function coerce(this: TSchema, _value: unknown) {
    const value = typeof _value === "string" ? JSON.parse(_value) : _value;
 
    if (typeof value !== "object" || value === null) {

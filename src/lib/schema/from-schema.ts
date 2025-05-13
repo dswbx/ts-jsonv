@@ -1,7 +1,6 @@
-import type { JSONSchemaDefinition } from "../types";
 import * as lib from "..";
 import * as unionFns from "../union/union";
-import { isObject, isTypeSchema, isArray } from "../utils";
+import { isObject, isTypeSchema, isArray, isBoolean, isSchema } from "../utils";
 import { InvalidRawSchemaError } from "../errors";
 
 function eachArray<T>(array: any | any[], fn: (item: any) => T): T[] {
@@ -22,15 +21,11 @@ function eachObject<T>(
    ) as Record<string, T>;
 }
 
-export function fromSchema<S extends JSONSchemaDefinition>(
-   _schema: S
-): lib.TAny & {
-   optional: () => lib.TOptional<lib.TAny>;
-} {
+export function fromSchema<Type = unknown>(_schema: any): lib.TSchema<Type> {
    const schema = structuredClone(_schema);
 
-   if (typeof schema === "boolean") {
-      return lib.booleanSchema(schema) as any;
+   if (isBoolean(schema)) {
+      return lib.schema(Boolean(schema)) as any;
    }
 
    if (!isObject(schema)) {
@@ -45,10 +40,14 @@ export function fromSchema<S extends JSONSchemaDefinition>(
          schema.properties,
          fromSchema,
          (s, key) => {
-            if ("required" in schema && schema.required?.includes(key)) {
+            if (
+               "required" in schema &&
+               Array.isArray(schema.required) &&
+               schema.required.includes(key)
+            ) {
                return s;
             }
-            return s.optional();
+            return s.optional() as any;
          }
       );
    }
@@ -65,6 +64,7 @@ export function fromSchema<S extends JSONSchemaDefinition>(
       "prefixItems",
       "propertyNames",
       "contains",
+      "not",
    ];
    for (const key of schemaize) {
       if (key in schema && typeof schema[key] !== "undefined") {
@@ -76,7 +76,7 @@ export function fromSchema<S extends JSONSchemaDefinition>(
       }
    }
 
-   // @todo: anyOf/etc with type is ignored
+   // @todo: allOf should resolve the full schema
    const unions = ["anyOf", "oneOf", "allOf"];
    for (const union of unions) {
       if (union in schema) {
@@ -89,27 +89,25 @@ export function fromSchema<S extends JSONSchemaDefinition>(
    if (isTypeSchema(schema)) {
       switch (schema.type) {
          case "string":
-            return lib.string(schema);
+            return lib.string(schema) as any;
          case "number":
-            return lib.number(schema);
+            return lib.number(schema) as any;
          case "integer":
-            return lib.integer(schema);
+            return lib.integer(schema) as any;
          case "boolean":
-            return lib.boolean(schema);
+            return lib.boolean(schema) as any;
          case "object": {
             // @ts-ignore
             const { properties, ...rest } = schema;
-            return lib.object(properties as any, rest as any);
+            return lib.object(properties as any, rest as any) as any;
          }
          case "array": {
             // @ts-ignore
             const { items, ...rest } = schema;
-            return lib.array(items as any, rest as any);
+            return lib.array(items as any, rest as any) as any;
          }
-         case "null":
-            return lib.nullSchema();
       }
    }
 
-   return lib.any(schema as any);
+   return lib.schema(schema as any);
 }

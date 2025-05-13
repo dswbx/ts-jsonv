@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { type Static, type TSchema } from "../base";
+import type { Static } from "../static";
 import { array } from "./array";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -75,10 +75,6 @@ describe("array", () => {
       const schema = array(string(), { contains: string() });
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<string[]>();
-
-      expectTypeOf<typeof schema.contains>().toEqualTypeOf<
-         TSchema | undefined
-      >();
 
       assertJson(schema, {
          type: "array",

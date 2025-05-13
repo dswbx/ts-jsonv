@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { type Static, type TSchema } from "../base";
+import { type Static } from "../static";
 import { integer, number } from "./number";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -11,6 +11,29 @@ describe("number", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<number>();
 
       assertJson(number(), { type: "number" });
+   });
+
+   test("options & type inference", () => {
+      {
+         // @ts-expect-error minimum must be a number
+         number({ minimum: "1" });
+      }
+
+      const schema = number({
+         minimum: 1,
+         maximum: 1,
+         multipleOf: 1,
+      });
+
+      expectTypeOf<(typeof schema)["minimum"]>().toEqualTypeOf<1>();
+      expectTypeOf<(typeof schema)["maximum"]>().toEqualTypeOf<1>();
+      expectTypeOf<(typeof schema)["multipleOf"]>().toEqualTypeOf<1>();
+
+      // @ts-expect-error exclusiveMaximum is not defined
+      schema.exclusiveMaximum;
+
+      // @ts-expect-error $id is not defined
+      schema.$id;
    });
 
    test("with const", () => {
@@ -155,7 +178,7 @@ describe("number", () => {
 
       // custom coersion
       const schema = number({
-         coerce: (v) => Number(v) * 2,
+         coerce: (v: unknown) => Number(v) * 2,
       });
       expect(schema.coerce("1")).toEqual(2);
    });

@@ -1,11 +1,11 @@
-import type { TSchema, ValidationOptions } from "../base";
+import type { TSchema } from "../schema";
 import { InvalidTypeError } from "../errors";
-import type { TAny } from "../misc/any";
 import {
    isArray,
    isBoolean,
    isBooleanSchema,
    isInteger,
+   isNull,
    isNumber,
    isObject,
    isSchema,
@@ -13,6 +13,7 @@ import {
    normalize,
 } from "../utils";
 import { error, makeOpts, valid } from "../utils/details";
+import type { ValidationOptions } from "./validate";
 
 export type KeywordResult = string | boolean;
 type Opts = Omit<ValidationOptions, "coerce">;
@@ -20,22 +21,40 @@ type Opts = Omit<ValidationOptions, "coerce">;
 /**
  * Default keywords
  */
-export const _type = ({ type }: TAny, value: unknown, opts: Opts = {}) => {
+export const _type = ({ type }: TSchema, value: unknown, opts: Opts = {}) => {
+   if (type === undefined) return valid();
+
    let msg: string | undefined;
-   if (type === "string" && !isString(value)) msg = "Expected string";
-   if (type === "number" && !isNumber(value)) msg = "Expected number";
-   if (type === "integer" && !isInteger(value)) msg = "Expected integer";
-   if (type === "object" && !isObject(value)) msg = "Expected object";
-   if (type === "array" && !isArray(value)) msg = "Expected array";
-   if (type === "boolean" && typeof value !== "boolean") {
-      msg = "Expected boolean";
+   const types = {
+      string: isString,
+      number: isNumber,
+      integer: isInteger,
+      object: isObject,
+      array: isArray,
+      boolean: isBoolean,
+      null: isNull,
+   };
+
+   if (Array.isArray(type)) {
+      for (const t of type) {
+         if (!(t in types)) {
+            throw new InvalidTypeError(`Unknown type: ${t}`);
+         }
+         if (types[t](value)) return valid();
+      }
+      msg = `Expected one of: ${type.join(", ")}`;
+   } else {
+      if (!(type in types)) {
+         throw new InvalidTypeError(`Unknown type: ${type}`);
+      }
+      if (!types[type](value)) msg = `Expected ${type}`;
    }
    if (msg) return error(opts, "type", msg, value);
    return valid();
 };
 
 export const _const = (
-   { const: _constValue }: TAny,
+   { const: _constValue }: TSchema,
    _value: unknown,
    opts: Opts = {}
 ) => {
@@ -48,7 +67,7 @@ export const _const = (
 };
 
 export const _enum = (
-   { enum: _enumValues = [] }: TAny,
+   { enum: _enumValues = [] }: TSchema,
    _value: unknown,
    opts: Opts = {}
 ) => {
@@ -60,15 +79,54 @@ export const _enum = (
    return valid();
 };
 
+function matches<T extends TSchema[]>(schemas: T, value: unknown): TSchema[] {
+   return schemas
+      .map((s) => (s.validate(value).valid ? s : undefined))
+      .filter(Boolean) as TSchema[];
+}
+
+export const anyOf = (
+   { anyOf = [] }: TSchema,
+   value: unknown,
+   opts: Opts = {}
+) => {
+   if (matches(anyOf, value).length > 0) return valid();
+   return error(opts, "anyOf", "Expected at least one to match", value);
+};
+
+export const oneOf = (
+   { oneOf = [] }: TSchema,
+   value: unknown,
+   opts: Opts = {}
+) => {
+   if (matches(oneOf, value).length === 1) return valid();
+   return error(opts, "oneOf", "Expected exactly one to match", value);
+};
+
+export const allOf = (
+   { allOf = [] }: TSchema,
+   value: unknown,
+   opts: Opts = {}
+) => {
+   if (matches(allOf, value).length === allOf.length) return valid();
+   return error(opts, "allOf", "Expected all to match", value);
+};
+
+export const not = ({ not }: TSchema, value: unknown, opts: Opts = {}) => {
+   if (isSchema(not) && not.validate(value).valid) {
+      return error(opts, "not", "Expected not to match", value);
+   }
+   return valid();
+};
 /**
  * Strings
  */
 export const pattern = (
-   { pattern = "" }: TAny,
+   { pattern = "" }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isString(value)) throw new InvalidTypeError("string");
+   if (!isString(value)) return valid();
    const match = pattern.match(/^\/(.+)\/([gimuy]*)$/);
    const [, p, f] = match || [null, pattern, ""];
    if (new RegExp(p, f).test(value)) return valid();
@@ -81,11 +139,11 @@ export const pattern = (
 };
 
 export const minLength = (
-   { minLength = 0 }: TAny,
+   { minLength = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isString(value)) throw new InvalidTypeError("string");
+   if (!isString(value)) return valid();
    const length = [...normalize(value)].length;
    if (length >= minLength) return valid();
    return error(
@@ -97,11 +155,11 @@ export const minLength = (
 };
 
 export const maxLength = (
-   { maxLength = 0 }: TAny,
+   { maxLength = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isString(value)) throw new InvalidTypeError("string");
+   if (!isString(value)) return valid();
    const length = [...normalize(value)].length;
    if (length <= maxLength) return valid();
    return error(
@@ -116,13 +174,13 @@ export const maxLength = (
  * Numbers
  */
 export const multipleOf = (
-   { multipleOf = 0 }: TAny,
+   { multipleOf = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
+   if (!isNumber(value)) return valid();
    // Spec guard – multipleOf must be > 0 and both numbers finite
    if (
-      !isNumber(value) ||
       !(Number.isFinite(value) && Number.isFinite(multipleOf)) ||
       multipleOf <= 0
    ) {
@@ -146,11 +204,11 @@ export const multipleOf = (
 };
 
 export const maximum = (
-   { maximum = 0 }: TAny,
+   { maximum = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isNumber(value)) throw new InvalidTypeError("number");
+   if (!isNumber(value)) return valid();
    if (value <= maximum) return valid();
    return error(
       opts,
@@ -161,11 +219,11 @@ export const maximum = (
 };
 
 export const exclusiveMaximum = (
-   { exclusiveMaximum = 0 }: TAny,
+   { exclusiveMaximum = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isNumber(value)) throw new InvalidTypeError("number");
+   if (!isNumber(value)) return valid();
    if (value < exclusiveMaximum) return valid();
    return error(
       opts,
@@ -176,11 +234,11 @@ export const exclusiveMaximum = (
 };
 
 export const minimum = (
-   { minimum = 0 }: TAny,
+   { minimum = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isNumber(value)) throw new InvalidTypeError("number");
+   if (!isNumber(value)) return valid();
    if (value >= minimum) return valid();
    return error(
       opts,
@@ -191,11 +249,11 @@ export const minimum = (
 };
 
 export const exclusiveMinimum = (
-   { exclusiveMinimum = 0 }: TAny,
+   { exclusiveMinimum = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isNumber(value)) throw new InvalidTypeError("number");
+   if (!isNumber(value)) return valid();
    if (value > exclusiveMinimum) return valid();
    return error(
       opts,
@@ -209,11 +267,11 @@ export const exclusiveMinimum = (
  * Objects
  */
 export const properties = (
-   { properties = {} }: TAny,
+   { properties = {} }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isObject(value)) throw new InvalidTypeError("object");
+   if (!isObject(value)) return valid();
    for (const [key, keyValue] of Object.entries(value)) {
       const schema = properties[key];
       // missing schema will be validated by additionalProperties
@@ -228,11 +286,11 @@ export const properties = (
 };
 
 export const additionalProperties = (
-   { properties = {}, additionalProperties, patternProperties }: TAny,
+   { properties = {}, additionalProperties, patternProperties }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isObject(value)) throw new InvalidTypeError("object");
+   if (!isObject(value)) return valid();
    if (!isBoolean(additionalProperties) && !isSchema(additionalProperties)) {
       throw new InvalidTypeError(
          "additionalProperties must be a boolean or a managed schema"
@@ -267,11 +325,11 @@ export const additionalProperties = (
 };
 
 export const required = (
-   { required = [] }: TAny,
+   { required = [] }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isObject(value)) throw new InvalidTypeError("object");
+   if (!isObject(value)) return valid();
    const keys = Object.keys(value).filter(
       (key) => typeof value[key] !== "function"
    );
@@ -285,11 +343,11 @@ export const required = (
 };
 
 export const minProperties = (
-   { minProperties = 0 }: TAny,
+   { minProperties = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isObject(value)) throw new InvalidTypeError("object");
+   if (!isObject(value)) return valid();
    if (Object.keys(value).length >= minProperties) return valid();
    return error(
       opts,
@@ -300,11 +358,11 @@ export const minProperties = (
 };
 
 export const maxProperties = (
-   { maxProperties = 0 }: TAny,
+   { maxProperties = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isObject(value)) throw new InvalidTypeError("object");
+   if (!isObject(value)) return valid();
    if (Object.keys(value).length <= maxProperties) return valid();
    return error(
       opts,
@@ -315,12 +373,13 @@ export const maxProperties = (
 };
 
 export const patternProperties = (
-   { patternProperties = {} }: TAny,
+   { patternProperties = {} }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isObject(value) || !isObject(patternProperties)) {
-      throw new InvalidTypeError("object");
+   if (!isObject(value)) return valid();
+   if (!isObject(patternProperties)) {
+      throw new InvalidTypeError("patternProperties must be an object");
    }
 
    for (const [_key, _value] of Object.entries(value)) {
@@ -338,11 +397,11 @@ export const patternProperties = (
 };
 
 export const propertyNames = (
-   { propertyNames }: TAny,
+   { propertyNames }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isObject(value)) throw new InvalidTypeError("object");
+   if (!isObject(value)) return valid();
    if (propertyNames === undefined) return valid();
    if (!isSchema(propertyNames)) {
       throw new InvalidTypeError("propertyNames must be a managed schema");
@@ -361,15 +420,15 @@ export const propertyNames = (
  * Arrays
  */
 export const items = (
-   { items, prefixItems = [] }: TAny,
+   { items, prefixItems = [] }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isArray(value)) throw new InvalidTypeError("array");
+   if (!isArray(value)) return valid();
    if (items === undefined) return valid();
-   if (items === false && value.length > prefixItems.length) {
+   /* if (items === false && value.length > prefixItems.length) {
       return error(opts, "items", "Additional items are not allowed", value);
-   }
+   } */
    if (!isSchema(items)) {
       throw new InvalidTypeError("items must be a managed schema");
    }
@@ -385,11 +444,11 @@ export const items = (
 };
 
 export const minItems = (
-   { minItems = 0 }: TAny,
+   { minItems = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isArray(value)) throw new InvalidTypeError("array");
+   if (!isArray(value)) return valid();
    if (value.length >= minItems) return valid();
    return error(
       opts,
@@ -400,11 +459,11 @@ export const minItems = (
 };
 
 export const maxItems = (
-   { maxItems = 0 }: TAny,
+   { maxItems = 0 }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isArray(value)) throw new InvalidTypeError("array");
+   if (!isArray(value)) return valid();
    if (value.length <= maxItems) return valid();
    return error(
       opts,
@@ -415,11 +474,11 @@ export const maxItems = (
 };
 
 export const uniqueItems = (
-   { uniqueItems = false }: TAny,
+   { uniqueItems = false }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isArray(value)) throw new InvalidTypeError("array");
+   if (!isArray(value)) return valid();
    if (uniqueItems) {
       const normalizedValues = value.map(normalize);
       if (
@@ -439,14 +498,14 @@ export const uniqueItems = (
 };
 
 export const contains = (
-   { contains, minContains, maxContains }: TAny,
+   { contains, minContains, maxContains }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
    if (!isSchema(contains)) {
       throw new Error("contains must be a managed schema");
    }
-   if (!isArray(value)) throw new InvalidTypeError("array");
+   if (!isArray(value)) return valid();
    const occ = value.filter((item) => contains.validate(item).valid).length;
    if (occ < (minContains ?? 1)) {
       return error(
@@ -470,11 +529,11 @@ export const contains = (
 };
 
 export const prefixItems = (
-   { prefixItems = [] }: TAny,
+   { prefixItems = [] }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isArray(value)) throw new InvalidTypeError("array");
+   if (!isArray(value)) return valid();
    for (let i = 0; i < value.length; i++) {
       const result = prefixItems[i]?.validate(
          value[i],

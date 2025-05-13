@@ -1,4 +1,4 @@
-import type { TSchema } from "../base";
+import type { TSchema } from "../schema";
 import { InvariantError } from "../errors";
 import { $kind } from "../symbols";
 import type {
@@ -6,6 +6,10 @@ import type {
    PropertyName,
    JSONSchemaDefinition,
 } from "../types";
+
+export function isNull(value: unknown): value is null {
+   return value === null;
+}
 
 export function isDefined(value: unknown): value is NonNullable<unknown> {
    return typeof value !== "undefined";
