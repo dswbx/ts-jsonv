@@ -1,13 +1,3 @@
-import type { BaseJSONSchema } from "./types";
-
-export const $kind = Symbol.for("kind");
-export const $optional = Symbol.for("optional");
-
-export interface TSchema {
-   [$kind]: string;
-   $id?: string;
-   static: unknown;
-}
 // from https://github.com/type-challenges/type-challenges/issues/28200
 export type Merge<T> = {
    [K in keyof T]: T[K];
@@ -27,27 +17,18 @@ type OptionalUndefined<
       [K in Exclude<keyof T, OptionsProps>]: T[K];
    }
 >;
+// https://github.com/sindresorhus/type-fest/blob/main/source/simplify.d.ts
+export type Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {};
 
-export type Static<S extends TSchema> = S["static"] extends Record<
+export type Static<S extends { static: unknown }> = S["static"] extends Record<
    string,
    unknown
 >
-   ? OptionalUndefined<S["static"]>
+   ? Simplify<OptionalUndefined<S["static"]>>
    : S["static"];
 
-export interface TOptional<S extends TSchema> extends TSchema {
-   schema: S;
-   static: Static<S> | undefined;
-}
-
-export const optional = <S extends TSchema>(schema: S): TOptional<S> =>
-   ({
-      ...schema,
-      [$optional]: true,
-   } as any);
-
 export type StaticConstEnum<
-   Schema extends BaseJSONSchema,
+   Schema extends { const?: unknown; enum?: unknown },
    Fallback = unknown
 > = Schema extends { const: infer C }
    ? C

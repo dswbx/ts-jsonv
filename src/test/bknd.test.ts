@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { expectTypeOf } from "expect-type";
 import * as s from "../lib";
 import { assertJson } from "../lib/assert";
-import type { Static } from "../lib";
 
 describe("Field", () => {
    const ActionContext = ["create", "read", "update", "delete"] as const;
@@ -49,7 +48,7 @@ describe("Field", () => {
          }
       ),
    });
-   type InferredBaseFieldConfig = Static<typeof baseFieldConfig>;
+   type InferredBaseFieldConfig = s.Static<typeof baseFieldConfig>;
 
    test("BaseField config", () => {
       expectTypeOf<InferredBaseFieldConfig>().toEqualTypeOf<{
@@ -71,6 +70,16 @@ describe("Field", () => {
                  | "submit"
               )[];
       }>();
+
+      expect(baseFieldConfig.template()).toEqual({});
+      expect(baseFieldConfig.template({ withOptional: true })).toEqual({
+         label: "",
+         description: "",
+         required: false,
+         virtual: false,
+         fillable: true,
+         hidden: false,
+      });
    });
 
    test("NumberField config", () => {
@@ -82,7 +91,7 @@ describe("Field", () => {
          exclusiveMaximum: s.boolean(),
          multipleOf: s.number(),
       });
-      type Inferred = Static<typeof schema>;
+      type Inferred = s.Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{
          default_value?: number;
          minimum?: number;
@@ -93,6 +102,7 @@ describe("Field", () => {
       }>();
 
       assertJson(schema, {
+         additionalProperties: false,
          type: "object",
          properties: {
             default_value: { type: "number" },
@@ -108,7 +118,7 @@ describe("Field", () => {
          ...baseFieldConfig.properties,
          ...schema.properties,
       });
-      type CombinedInferred = Static<typeof combined>;
+      type CombinedInferred = s.Static<typeof combined>;
       expectTypeOf<CombinedInferred>().toEqualTypeOf<{
          default_value?: number;
          minimum?: number;
@@ -152,7 +162,7 @@ describe("AppServer", () => {
          { default: {} }
       ),
    });
-   type Inferred = Static<typeof schema>;
+   type Inferred = s.Static<typeof schema>;
    expectTypeOf<Inferred>().toEqualTypeOf<{
       cors: {
          origin: string;

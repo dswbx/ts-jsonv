@@ -1,15 +1,27 @@
-import { $kind, type TSchema } from "../base";
+import {
+   type TCustomSchema,
+   type TSchema,
+   type TSchemaBase,
+   schema,
+} from "../schema";
+import { type Static } from "../static";
+
+export type TRef<T extends TSchema> = TCustomSchema<TSchemaBase, Static<T>> & {
+   $ref: string;
+};
 
 export const ref = <T extends TSchema>(
-   schema: T,
+   ref: T,
    prefix: "$defs" | "definitions" = "$defs"
-): T => {
-   if (!schema.$id) {
+): TRef<T> => {
+   if (!ref.$id) {
       throw new Error("Schema must have a $id");
    }
 
-   return {
-      $ref: `#/${prefix}/${schema.$id}`,
-      [$kind]: "ref",
-   } as any;
+   return schema(
+      {
+         $ref: `#/${prefix}/${ref.$id}`,
+      },
+      "ref"
+   );
 };
