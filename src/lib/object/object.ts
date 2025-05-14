@@ -8,15 +8,23 @@ import {
    type TAnySchema,
    type TCustomSchema,
 } from "../schema";
-import type { Static, StaticConstEnum } from "../static";
+import type {
+   OptionalUndefined,
+   Simplify,
+   Static,
+   StaticCoersed,
+} from "../static";
 import { $optional } from "../symbols";
-import { invariant, isObject, isSchema, isValidPropertyName } from "../utils";
+import { invariant, isSchema, isValidPropertyName } from "../utils";
 
 export type PropertyName = string;
 export type TProperties = { [key in PropertyName]: TAnySchema | TOptional };
 
 type ObjectStatic<T extends TProperties> = {
    [K in keyof T]: Static<T[K]>;
+};
+type ObjectCoerced<T extends TProperties> = {
+   [K in keyof T]: StaticCoersed<T[K]>;
 };
 
 export interface ObjectSchema extends TSchemaBase, Partial<TSchemaFn> {
@@ -27,26 +35,13 @@ export interface ObjectSchema extends TSchemaBase, Partial<TSchemaFn> {
    propertyNames?: TAnySchema;
 }
 
-/* export interface TObject<P extends TProperties, O extends ObjectSchema>
-   extends Omit<TSchema<object>, "properties">,
-      TSchemaFn {
-   static: StaticConstEnum<O, ObjectStatic<P>>;
-   properties: P;
-} */
-
 export type TObject<P extends TProperties, O extends ObjectSchema> = Omit<
    TCustomSchema<O, ObjectStatic<P>>,
    "properties"
 > & {
    properties: P;
+   coerce: (value: unknown) => ObjectCoerced<P>;
 };
-/*    
-type TObject<P extends TProperties, O extends ObjectSchema> = {
-   static: StaticConstEnum<O, ObjectStatic<P>>;
-   properties: P;
-} & {
-   [K in keyof O]: O[K];
-} & TSchemaFn; */
 
 export const object = <P extends TProperties, const O extends ObjectSchema>(
    properties: P,
@@ -91,15 +86,22 @@ export const strictObject = <
    }) as any;
 };
 
+type PartialObjectStatic<T extends TProperties> = {
+   [K in keyof T]: Static<T[K]> | undefined;
+};
+
+type PartialObjectCoerced<T extends TProperties> = {
+   [K in keyof T]: StaticCoersed<T[K]> | undefined;
+};
+
 export type TPartialObject<
    P extends TProperties,
    O extends ObjectSchema
 > = Omit<TCustomSchema<O, PartialObjectStatic<P>>, "properties"> & {
    properties: P;
-};
-
-type PartialObjectStatic<T extends TProperties> = {
-   [K in keyof T]: Static<T[K]> | undefined;
+   coerce: (
+      value: unknown
+   ) => Simplify<OptionalUndefined<PartialObjectCoerced<P>>>;
 };
 
 export const partialObject = <

@@ -4,7 +4,8 @@
    "module": "dist/lib/index.js",
    "types": "dist/lib/index.d.ts",
    "version": "0.2.1",
-   "description": "A simple and lightweight (<6kb gzipped) TypeScript library for defining and validating JSON schemas with static type inference.",
+   "sideEffects": false,
+   "description": "A simple, lightweight (<6kb gzipped) and dependency-free TypeScript library for defining and validating JSON schemas with static type inference.",
    "repository": {
       "type": "git",
       "url": "git+https://github.com/dswbx/simple-jsonschema-ts.git"

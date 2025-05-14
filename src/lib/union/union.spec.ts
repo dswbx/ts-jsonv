@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import type { Static } from "../static";
+import type { Static, StaticCoersed } from "../static";
 import { $kind } from "../symbols";
 import { allOf, anyOf, oneOf } from "./union";
 import { assertJson } from "../assert";
@@ -92,5 +92,24 @@ describe("union", () => {
    test("template", () => {
       const schema = anyOf([string(), number()], { default: 1 });
       expect(schema.template()).toEqual(1);
+   });
+
+   test("coerce", () => {
+      const schema = anyOf([string(), array(string())], {
+         coerce: (value: unknown): string[] => {
+            if (typeof value === "string" && value.includes(",")) {
+               return value.split(",");
+            } else if (Array.isArray(value)) {
+               return value.map(String);
+            }
+            return [String(value)];
+         },
+      });
+      type Inferred = StaticCoersed<typeof schema>;
+      expectTypeOf<Inferred>().toEqualTypeOf<string[]>();
+
+      expect(schema.coerce("test")).toEqual(["test"]);
+      expect(schema.coerce("test,test2")).toEqual(["test", "test2"]);
+      expect(schema.coerce(["test", "test2"])).toEqual(["test", "test2"]);
    });
 });

@@ -37,4 +37,41 @@ describe("hono middleware", () => {
       });
       expect((await req({})).valid).toEqual(false);
    });
+
+   test("query coercion", async () => {
+      const app = new Hono();
+      app.get(
+         "/query",
+         jsc(
+            "query",
+            s.partialObject({
+               int: s.number(),
+               bool: s.boolean(),
+               str: s.string(),
+            })
+         ),
+         (c) => {
+            const json = c.req.valid("query");
+            //    ^?
+            return c.json(json);
+         }
+      );
+
+      const req = async (input: object): Promise<any> => {
+         const params = new URLSearchParams(input as any);
+         const res = await app.request(
+            "http://localhost:3000/query?" + params.toString(),
+            {
+               method: "GET",
+            }
+         );
+         return await res.json();
+      };
+
+      expect(await req({ int: "123", bool: "true", str: "test" })).toEqual({
+         int: 123,
+         bool: true,
+         str: "test",
+      });
+   });
 });

@@ -15,18 +15,6 @@ export interface StringSchema extends TSchemaBase, Partial<TSchemaFn> {
 
 export type TString<O extends StringSchema> = TCustomSchema<O, string>;
 
-/* export type TString<O extends StringSchema> = {
-   static: StaticConstEnum<O, string>;
-} & {
-   [K in keyof O]: O[K];
-} & TSchemaFn; */
-
-/* export interface TString<O extends StringSchema>
-   extends TSchema<string>,
-      TSchemaFn {
-   static: StaticConstEnum<O, string>;
-}*/
-
 export const string = <const S extends StringSchema = StringSchema>(
    config: S = {} as S
 ): TString<S> =>

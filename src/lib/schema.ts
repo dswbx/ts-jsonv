@@ -1,5 +1,5 @@
 import { $kind, $optional, $raw } from "./symbols";
-import type { Static, StaticConstEnum } from "./static";
+import type { Static, StaticCoersed, StaticConstEnum } from "./static";
 import { isBoolean, isObject } from "./utils";
 import { validate } from "./validation/validate";
 import type {
@@ -32,6 +32,7 @@ export interface TSchemaFn {
 export type TOptional<Schema extends TSchema = TSchema> = {
    optional: never;
    static: Static<Schema> | undefined;
+   coerce: (value: unknown) => StaticCoersed<Schema> | undefined;
 };
 
 export interface TSchemaBase {
@@ -53,11 +54,15 @@ export interface TSchemaBase {
    const?: any;
 }
 
-export type TAnySchema = { static: unknown };
+export type TAnySchema = {
+   static: unknown;
+   coerce: (value: unknown) => unknown;
+};
 
 export interface TSchema<Type = unknown> extends TSchemaBase, TSchemaFn {
    // internal
    optional: () => TOptional<this>;
+   coerce: (value: unknown) => Type;
    static: Type;
 
    // string
@@ -109,6 +114,7 @@ export type TCustomSchema<
 > = TSchema & {
    static: StaticConstEnum<Options, Fallback>;
    optional: () => TOptional<TCustomSchema<Options, Fallback>>;
+   coerce: (value: unknown) => StaticConstEnum<Options, Fallback>;
 } & {
    [K in keyof Options]: Options[K];
 } & TSchemaFn;

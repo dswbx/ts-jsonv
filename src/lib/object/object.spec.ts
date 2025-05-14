@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import type { Static } from "../static";
+import type { Static, StaticCoersed } from "../static";
 import { object, partialObject, record, strictObject } from "./object";
 import { any } from "../schema";
 import { assertJson } from "../assert";
@@ -286,5 +286,16 @@ describe("object", () => {
          name: "John",
          age: 30,
       });
+
+      {
+         const s = string({ coerce: () => "asdf" as const });
+         const schema = object({
+            name: s,
+         });
+         type StringCoerced = StaticCoersed<typeof s>;
+         expectTypeOf<StringCoerced>().toEqualTypeOf<"asdf">();
+         type Coerced = StaticCoersed<typeof schema>;
+         expectTypeOf<Coerced>().toEqualTypeOf<{ name: "asdf" }>();
+      }
    });
 });

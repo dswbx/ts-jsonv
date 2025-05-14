@@ -82,6 +82,7 @@ export type ValidationOptions = {
    coerce?: boolean;
    errors?: ErrorDetail[];
    shortCircuit?: boolean;
+   ignoreUnsupported?: boolean;
 };
 
 export type ValidationResult = {
@@ -97,19 +98,17 @@ export function validate(
    let errors: ErrorDetail[] = opts?.errors || [];
    const value = opts?.coerce ? s.coerce(_value) : _value;
 
-   const todo = [
-      //"readOnly",
-      "$ref",
-      "$defs",
-   ];
-   for (const item of todo) {
-      if (s[item]) {
-         throw new Error(`${item} not implemented`);
+   if (opts.ignoreUnsupported !== true) {
+      // @todo: readOnly
+      // @todo: $ref
+      // @todo: $defs
+      const todo = ["$ref", "$defs"];
+      for (const item of todo) {
+         if (s[item]) {
+            throw new Error(`${item} not implemented`);
+         }
       }
    }
-   // @todo: readOnly
-   // @todo: $ref
-   // @todo: $defs
 
    for (const [keyword, validator] of Object.entries(keywords)) {
       if (s[keyword] === undefined) continue;

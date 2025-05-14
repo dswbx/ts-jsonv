@@ -15,12 +15,6 @@ export interface NumberSchema extends TSchemaBase, Partial<TSchemaFn> {
 
 export type TNumber<O extends NumberSchema> = TCustomSchema<O, number>;
 
-/* export interface TNumber<O extends NumberSchema>
-   extends TSchema<number>,
-      TSchemaFn {
-   static: StaticConstEnum<O, number>;
-}*/
-
 export const number = <const S extends NumberSchema>(
    config: S = {} as S
 ): TNumber<S> =>

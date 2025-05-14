@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { expectTypeOf } from "expect-type";
 import * as s from "../lib";
 import { assertJson } from "../lib/assert";
+import type { NumberSchema } from "../lib/types";
 
 describe("Field", () => {
    const ActionContext = ["create", "read", "update", "delete"] as const;
@@ -199,5 +200,103 @@ describe("AppServer", () => {
       },
       required: ["cors"],
       additionalProperties: false,
+   });
+});
+
+describe("misc", () => {
+   test("RepoQuery", () => {
+      const numberOrString = <N extends NumberSchema>(c: N = {} as N) =>
+         s.anyOf([s.number(c), s.string()], {
+            coerce: Number,
+         });
+      const n = numberOrString();
+      type NumberOrStringCoerced = s.StaticCoersed<typeof n>;
+      expectTypeOf<NumberOrStringCoerced>().toEqualTypeOf<number>();
+
+      const stringArray = s.anyOf(
+         [
+            s.string(),
+            s.array(s.string(), {
+               uniqueItems: true,
+            }),
+         ],
+         {
+            coerce: (v): string[] => {
+               if (Array.isArray(v)) {
+                  return v;
+               }
+               return [String(v)];
+            },
+         }
+      );
+      type StringArrayIn = s.Static<typeof stringArray>;
+      expectTypeOf<StringArrayIn>().toEqualTypeOf<string | string[]>();
+      type StringArrayOut = s.StaticCoersed<typeof stringArray>;
+      expectTypeOf<StringArrayOut>().toEqualTypeOf<string[]>();
+
+      const sortObj = s.object({
+         by: s.string(),
+         dir: s.string({ enum: ["asc", "desc"] }),
+      });
+      type SortObj = s.Static<typeof sortObj>;
+      expectTypeOf<SortObj>().toEqualTypeOf<{
+         by: string;
+         dir: "asc" | "desc";
+      }>();
+
+      const sort = s.anyOf([s.string(), sortObj], {
+         coerce: (v): SortObj => {
+            if (typeof v === "string") {
+               return { by: v, dir: "asc" };
+            }
+            return v as SortObj;
+         },
+      });
+      type SortIn = s.Static<typeof sort>;
+      expectTypeOf<SortIn>().toEqualTypeOf<
+         | string
+         | {
+              by: string;
+              dir: "asc" | "desc";
+           }
+      >();
+      type SortOut = s.StaticCoersed<typeof sort>;
+      expectTypeOf<SortOut>().toEqualTypeOf<{
+         by: string;
+         dir: "asc" | "desc";
+      }>();
+
+      const repoQuery = s.partialObject({
+         limit: numberOrString({ default: 10 }),
+         offset: numberOrString({ default: 0 }),
+         sort,
+         select: stringArray,
+         join: stringArray,
+      });
+      type RepoQueryIn = s.Static<typeof repoQuery>;
+      expectTypeOf<RepoQueryIn>().toEqualTypeOf<{
+         limit?: number | string;
+         offset?: number | string;
+         sort?: string | { by: string; dir: "asc" | "desc" };
+         select?: string | string[];
+         join?: string | string[];
+      }>();
+
+      type RepoQueryOut = s.StaticCoersed<typeof repoQuery>;
+      expectTypeOf<RepoQueryOut>().toEqualTypeOf<{
+         limit?: number;
+         offset?: number;
+         sort?: { by: string; dir: "asc" | "desc" };
+         select?: string[];
+         join?: string[];
+      }>();
+
+      /* console.log(JSON.stringify(repoQuery.toJSON(), null, 2));
+      console.log(repoQuery.coerce({})); */
+
+      expect(repoQuery.coerce({ limit: "11", select: "id" })).toEqual({
+         limit: 11,
+         select: ["id"],
+      });
    });
 });

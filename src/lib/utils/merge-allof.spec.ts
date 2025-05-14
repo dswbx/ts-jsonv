@@ -61,7 +61,7 @@ describe("mergeAllOf", () => {
          type: "null",
       });
 
-      console.log(
+      /* console.log(
          JSON.stringify(
             fromSchema({
                allOf: [{ properties: { foo: {} } }],
@@ -70,6 +70,6 @@ describe("mergeAllOf", () => {
             null,
             2
          )
-      );
+      ); */
    });
 });

@@ -2,7 +2,7 @@
 export type Merge<T> = {
    [K in keyof T]: T[K];
 };
-type OptionalUndefined<
+export type OptionalUndefined<
    T,
    Props extends keyof T = keyof T,
    OptionsProps extends keyof T = Props extends keyof T
@@ -26,6 +26,10 @@ export type Static<S extends { static: unknown }> = S["static"] extends Record<
 >
    ? Simplify<OptionalUndefined<S["static"]>>
    : S["static"];
+
+export type StaticCoersed<
+   S extends { static: unknown; coerce: (value: unknown) => unknown }
+> = S["coerce"] extends (v: unknown) => infer R ? Simplify<R> : never;
 
 export type StaticConstEnum<
    Schema extends { const?: unknown; enum?: unknown },

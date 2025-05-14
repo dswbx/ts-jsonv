@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import type { Static } from "../static";
+import type { Static, StaticCoersed } from "../static";
 import { array } from "./array";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -130,6 +130,13 @@ describe("array", () => {
          expect(schema.coerce("[]")).toEqual([]);
          expect(schema.coerce("[1]")).toEqual([1]);
          expect(schema.coerce(["1", "2"])).toEqual([1, 2]);
+      }
+
+      {
+         const s = string({ coerce: () => "" as unknown as "one" | "two" });
+         const schema = array(s);
+         type Coerced = StaticCoersed<typeof schema>;
+         expectTypeOf<Coerced>().toEqualTypeOf<("one" | "two")[]>();
       }
    });
 });

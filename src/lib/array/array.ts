@@ -5,10 +5,11 @@ import {
    type TAnySchema,
    type TCustomSchema,
 } from "../schema";
-import type { Static } from "../static";
+import type { Static, StaticCoersed } from "../static";
 import { isSchema, invariant, isBoolean } from "../utils";
 
 type ArrayStatic<T extends TAnySchema> = Static<T>[] & {};
+type ArrayCoerced<T extends TAnySchema> = StaticCoersed<T>[] & {};
 
 export interface ArraySchema extends TSchemaBase, Partial<TSchemaFn> {
    contains?: TAnySchema;
@@ -25,6 +26,7 @@ type TArray<Items extends TAnySchema, O extends ArraySchema> = TCustomSchema<
    ArrayStatic<Items>
 > & {
    items: Items;
+   coerce: (value: unknown) => ArrayCoerced<Items>;
 };
 
 export const array = <
