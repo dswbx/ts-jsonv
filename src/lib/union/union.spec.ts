@@ -57,19 +57,18 @@ describe("union", () => {
          what: string;
       }>();
 
+      console.log(JSON.stringify(schema, null, 2));
       assertJson(schema, {
-         allOf: [
-            {
-               type: "object",
-               properties: { test: { type: "string" } },
-               required: ["test"],
+         type: "object",
+         required: ["test", "what"],
+         properties: {
+            test: {
+               type: "string",
             },
-            {
-               type: "object",
-               properties: { what: { type: "string" } },
-               required: ["what"],
+            what: {
+               type: "string",
             },
-         ],
+         },
       });
    });
 

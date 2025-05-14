@@ -124,14 +124,14 @@ export const ifThenElse = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (isSchema(_if) && (isSchema(_then) || isSchema(_else))) {
+   if (_if && (_then || _else)) {
       const result = _if.validate(value);
       if (result.valid) {
-         if (isSchema(_then)) {
+         if (_then) {
             return _then.validate(value, opts);
          }
          return valid();
-      } else if (isSchema(_else)) {
+      } else if (_else) {
          return _else.validate(value, opts);
       }
    }
@@ -147,9 +147,7 @@ export const pattern = (
    opts: Opts = {}
 ) => {
    if (!isString(value)) return valid();
-   const match = pattern.match(/^\/(.+)\/([gimuy]*)$/);
-   const [, p, f] = match || [null, pattern, ""];
-   if (new RegExp(p, f).test(value)) return valid();
+   if (new RegExp(pattern, "u").test(value)) return valid();
    return error(
       opts,
       "pattern",
@@ -228,8 +226,7 @@ export const maximum = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isNumber(value)) return valid();
-   if (value <= maximum) return valid();
+   if (!isNumber(value) || value <= maximum) return valid();
    return error(
       opts,
       "maximum",
@@ -243,8 +240,7 @@ export const exclusiveMaximum = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isNumber(value)) return valid();
-   if (value < exclusiveMaximum) return valid();
+   if (!isNumber(value) || value < exclusiveMaximum) return valid();
    return error(
       opts,
       "exclusiveMaximum",
@@ -258,8 +254,7 @@ export const minimum = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isNumber(value)) return valid();
-   if (value >= minimum) return valid();
+   if (!isNumber(value) || value >= minimum) return valid();
    return error(
       opts,
       "minimum",
@@ -273,8 +268,7 @@ export const exclusiveMinimum = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isNumber(value)) return valid();
-   if (value > exclusiveMinimum) return valid();
+   if (!isNumber(value) || value > exclusiveMinimum) return valid();
    return error(
       opts,
       "exclusiveMinimum",
@@ -345,16 +339,7 @@ export const additionalProperties = (
 };
 
 export const dependentRequired = (
-   s: TSchema,
-   value: unknown,
-   opts: Opts = {}
-) => {
-   // handled in required
-   return required(s, value, opts);
-};
-
-export const required = (
-   { required = [], dependentRequired }: TSchema,
+   { dependentRequired }: TSchema,
    value: unknown,
    opts: Opts = {}
 ) => {
@@ -378,6 +363,18 @@ export const required = (
          }
       }
    }
+   return valid();
+};
+
+export const required = (
+   { required = [] }: TSchema,
+   value: unknown,
+   opts: Opts = {}
+) => {
+   if (!isObject(value)) return valid();
+   const keys = Object.keys(value).filter(
+      (key) => typeof value[key] !== "function"
+   );
    if (required.every((key) => keys.includes(key))) return valid();
    return error(
       opts,
@@ -385,6 +382,26 @@ export const required = (
       `Expected object with required properties ${required.join(", ")}`,
       value
    );
+};
+
+export const dependentSchemas = (
+   { dependentSchemas }: TSchema,
+   value: unknown,
+   opts: Opts = {}
+) => {
+   if (!isObject(value)) return valid();
+   const keys = Object.keys(value).filter(
+      (key) => typeof value[key] !== "function"
+   );
+   if (isObject(dependentSchemas)) {
+      for (const [key, depSchema] of Object.entries(dependentSchemas)) {
+         if (keys.includes(key)) {
+            const result = depSchema.validate(value, opts);
+            if (!result.valid) return result;
+         }
+      }
+   }
+   return valid();
 };
 
 export const minProperties = (
@@ -407,8 +424,8 @@ export const maxProperties = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isObject(value)) return valid();
-   if (Object.keys(value).length <= maxProperties) return valid();
+   if (!isObject(value) || Object.keys(value).length <= maxProperties)
+      return valid();
    return error(
       opts,
       "maxProperties",
@@ -429,7 +446,7 @@ export const patternProperties = (
 
    for (const [_key, _value] of Object.entries(value)) {
       for (const [pattern, schema] of Object.entries(patternProperties)) {
-         if (new RegExp(pattern).test(_key)) {
+         if (new RegExp(pattern, "u").test(_key)) {
             const result = schema.validate(
                _value,
                makeOpts(opts, ["patternProperties"], _key)
@@ -446,8 +463,7 @@ export const propertyNames = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isObject(value)) return valid();
-   if (propertyNames === undefined) return valid();
+   if (!isObject(value) || propertyNames === undefined) return valid();
    if (!isSchema(propertyNames)) {
       throw new InvalidTypeError("propertyNames must be a managed schema");
    }
@@ -469,11 +485,7 @@ export const items = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isArray(value)) return valid();
-   if (items === undefined) return valid();
-   /* if (items === false && value.length > prefixItems.length) {
-      return error(opts, "items", "Additional items are not allowed", value);
-   } */
+   if (!isArray(value) || items === undefined) return valid();
    if (!isSchema(items)) {
       throw new InvalidTypeError("items must be a managed schema");
    }
@@ -493,8 +505,7 @@ export const minItems = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isArray(value)) return valid();
-   if (value.length >= minItems) return valid();
+   if (!isArray(value) || value.length >= minItems) return valid();
    return error(
       opts,
       "minItems",
@@ -508,8 +519,7 @@ export const maxItems = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isArray(value)) return valid();
-   if (value.length <= maxItems) return valid();
+   if (!isArray(value) || value.length <= maxItems) return valid();
    return error(
       opts,
       "maxItems",
@@ -523,23 +533,15 @@ export const uniqueItems = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (!isArray(value)) return valid();
-   if (uniqueItems) {
-      const normalizedValues = value.map(normalize);
-      if (
-         new Set(normalizedValues.map((v) => JSON.stringify(v))).size ===
-         value.length
-      ) {
-         return valid();
-      }
-      return error(
-         opts,
-         "uniqueItems",
-         "Expected array with unique items",
-         value
-      );
+   if (!isArray(value) || !uniqueItems) return valid();
+   const normalizedValues = value.map(normalize);
+   if (
+      new Set(normalizedValues.map((v) => JSON.stringify(v))).size ===
+      value.length
+   ) {
+      return valid();
    }
-   return valid();
+   return error(opts, "uniqueItems", "Expected array with unique items", value);
 };
 
 export const contains = (

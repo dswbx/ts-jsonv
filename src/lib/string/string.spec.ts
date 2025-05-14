@@ -117,7 +117,7 @@ describe("string", () => {
       });
 
       test("pattern", () => {
-         const schema = string({ pattern: "/a/" });
+         const schema = string({ pattern: "a" });
          expect(schema.validate("a").valid).toBe(true);
          expect(schema.validate("b").errors[0]?.keywordLocation).toEqual(
             "/pattern"

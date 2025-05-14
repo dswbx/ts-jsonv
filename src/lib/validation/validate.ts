@@ -30,6 +30,7 @@ import {
    oneOf,
    not,
    dependentRequired,
+   dependentSchemas,
    ifThenElse,
 } from "./keywords";
 import { format } from "./format";
@@ -51,7 +52,7 @@ export const keywords: Record<string, TKeywordFn> = {
    minLength,
    maxLength,
    pattern,
-   //format,
+   format,
    minimum,
    exclusiveMinimum,
    maximum,
@@ -59,6 +60,7 @@ export const keywords: Record<string, TKeywordFn> = {
    multipleOf,
    required,
    dependentRequired,
+   dependentSchemas,
    minProperties,
    maxProperties,
    propertyNames,
@@ -79,7 +81,7 @@ export type ValidationOptions = {
    instancePath?: string[];
    coerce?: boolean;
    errors?: ErrorDetail[];
-   exitOnFirstError?: boolean;
+   shortCircuit?: boolean;
 };
 
 export type ValidationResult = {
@@ -97,11 +99,6 @@ export function validate(
 
    const todo = [
       //"readOnly",
-      //"dependentRequired",
-      "dependentSchemas",
-      //"if",
-      //"then",
-      //"else",
       "$ref",
       "$defs",
    ];
@@ -111,7 +108,6 @@ export function validate(
       }
    }
    // @todo: readOnly
-   // @todo: dependentSchemas
    // @todo: $ref
    // @todo: $defs
 
@@ -122,7 +118,7 @@ export function validate(
          errors,
       });
       if (!result.valid) {
-         if (opts.exitOnFirstError) {
+         if (opts.shortCircuit) {
             return result;
          }
          errors = result.errors;

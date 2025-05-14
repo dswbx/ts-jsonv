@@ -2,10 +2,9 @@ import { getTestFiles, loadTest, recurisvelyHasKeys } from "./utils";
 import { fromSchema } from "../../lib/schema/from-schema";
 import path from "node:path";
 import c from "picocolors";
-import { isArray, isObject } from "../../lib/utils";
 import type { JSONSchema } from "../../lib/types";
 
-const files = await getTestFiles("draft2020-12", { includeOptional: false });
+const files = await getTestFiles("draft2020-12", { includeOptional: true });
 
 const tests: (Awaited<ReturnType<typeof loadTest>> & { path: string })[] = [];
 for (const file of files) {
@@ -24,6 +23,7 @@ const stats = {
    skipped: 0,
    passed: 0,
    failed: 0,
+   optionalFailed: 0,
 };
 
 type SkipFn = (ctx: {
@@ -41,25 +41,13 @@ const skips: SkipFn[] = [
          "$ref",
          "$defs",
          // evaluation
+         "dependencies",
          "unevaluatedItems",
          "unevaluatedProperties",
          // meta
          "vocabulary",
-         // dependencies
-         "dependencies",
-         "dependentSchemas",
-         //"dependentRequired",
-         // conditional
-         //"not",
-         //"if",
-         //"then",
-         //"else",
-         // temporary
-         //"allOf",
-         "format-assertion",
-         "non-bmp-regex",
+         // misc
          "float-overflow",
-         "ecmascript-regex",
       ].some((k) => file.includes(k) || recurisvelyHasKeys(schema, [k])),
 
    // skip array-types
@@ -67,11 +55,15 @@ const skips: SkipFn[] = [
 
    // skip specific tests
    ({ test }) =>
-      (test && [].some((s) => test.description.includes(s))) || false,
+      (test &&
+         ["is only an annotation by default"].some((s) =>
+            test.description.includes(s)
+         )) ||
+      false,
 ];
 
-const abort_early = true;
-const explain = true;
+const abort_early = false;
+const explain = false;
 
 for (const testSuite of tests) {
    console.log(c.cyan(`\n[TEST] ${testSuite.path}`));
@@ -118,12 +110,16 @@ for (const testSuite of tests) {
                );
                stats.passed++;
             } catch (e) {
+               const isOptional = testSuite.path.includes("/optional/");
                const result = e instanceof Error ? undefined : e;
-               console.error(
-                  "  ->",
-                  e instanceof Error ? "[ERR]" : "[FAIL]",
-                  test.description
+               const isError = e instanceof Error;
+               const color = isError ? c.red : isOptional ? c.yellow : c.red;
+               console.log(
+                  color(
+                     `  -> ${isError ? "[ERR]" : "[FAIL]"} ${test.description}`
+                  )
                );
+               explain && isError && console.error("Error:", String(e));
                explain &&
                   console.log({
                      result,
@@ -131,7 +127,11 @@ for (const testSuite of tests) {
                      schema: item.schema,
                      fromSchema: schema,
                   });
-               stats.failed++;
+               if (isOptional) {
+                  stats.optionalFailed++;
+               } else {
+                  stats.failed++;
+               }
 
                if (abort_early) {
                   printStats();
@@ -176,5 +176,10 @@ function printStats() {
       "Failed:",
       stats.failed,
       `(${((stats.failed / stats.total) * 100).toFixed(2)}%)`
+   );
+   console.log(
+      "Optional failed:",
+      stats.optionalFailed,
+      `(${((stats.optionalFailed / stats.total) * 100).toFixed(2)}%)`
    );
 }

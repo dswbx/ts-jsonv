@@ -237,10 +237,11 @@ type StringOrNumber = s.Static<typeof StringOrNumberSchema>; // string | number
 
 ## Validation Status
 
--  Total tests: 1257
--  Passed: 869 (69.13%)
--  Skipped: 388 (30.87%)
+-  Total tests: 1906
+-  Passed: 1412 (74.08%)
+-  Skipped: 440 (23.08%)
 -  Failed: 0 (0.00%)
+-  Optional failed: 54 (2.83%)
 
 ## Validation
 

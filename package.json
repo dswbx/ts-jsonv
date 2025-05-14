@@ -15,7 +15,7 @@
    "type": "module",
    "license": "MIT",
    "scripts": {
-      "test:unit": "bun test",
+      "test:unit": "bun test --bail",
       "types": "tsc --noEmit",
       "test": "bun types && bun test:unit",
       "test:spec": "clear && bun run src/test/spec/run.ts",

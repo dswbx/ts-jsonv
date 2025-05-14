@@ -30,7 +30,7 @@ describe("validate", () => {
             s.string({ minLength: 10, pattern: "^[0-9]+$" }),
             "what",
             {
-               exitOnFirstError: true,
+               shortCircuit: true,
             }
          );
          expect(result.valid).toBe(false);

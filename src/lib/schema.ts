@@ -91,6 +91,7 @@ export interface TSchema<Type = unknown> extends TSchemaBase, TSchemaFn {
    maxProperties?: number;
    propertyNames?: TSchema;
    dependentRequired?: { [key in PropertyName]: PropertyName[] };
+   dependentSchemas?: { [key in PropertyName]: TSchema };
    // Combining schemas
    allOf?: TSchema[];
    anyOf?: TSchema[];

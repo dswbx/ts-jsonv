@@ -52,11 +52,11 @@ export function fromSchema<Type = unknown>(_schema: any): lib.TSchema<Type> {
          }
       );
    }
-   if ("patternProperties" in schema && schema.patternProperties) {
-      schema.patternProperties = eachObject(
-         schema.patternProperties,
-         fromSchema
-      );
+   const records = ["patternProperties", "dependentSchemas"];
+   for (const key of records) {
+      if (key in schema && schema[key]) {
+         schema[key] = eachObject(schema[key], fromSchema);
+      }
    }
 
    const schemaize = [
