@@ -2,6 +2,7 @@ import { Validator } from "@cfworker/json-schema";
 import * as s from "../lib";
 import { describe, expect, test } from "bun:test";
 import Ajv from "ajv";
+import { compileSchema } from "json-schema-library";
 
 const schemas = [
    {
@@ -29,25 +30,27 @@ const schemas = [
    },
 ] as const;
 
-function cleanSchema(schema: any) {
-   return JSON.parse(JSON.stringify(schema));
-}
-
 const validators: {
    name: string;
-   validate: (schema: s.TSchema, data: any) => boolean;
+   validate: (schema: object, data: any) => boolean;
 }[] = [
    {
       name: "@cfworker/json-schema",
-      validate: (schema: s.TSchema, data: any) => {
-         return new Validator(cleanSchema(schema)).validate(data).valid;
+      validate: (schema: object, data: any) => {
+         return new Validator(schema).validate(data).valid;
       },
    },
    {
       name: "ajv",
-      validate: (schema: s.TSchema, data: any) => {
+      validate: (schema: object, data: any) => {
          const ajv = new Ajv();
          return ajv.validate(schema, data);
+      },
+   },
+   {
+      name: "json-schema-library",
+      validate: (schema: object, data: any) => {
+         return compileSchema(schema).validate(data).valid;
       },
    },
 ] as const;
@@ -69,7 +72,7 @@ describe("validation", () => {
          for (const { name, schema, data } of schemas) {
             test(name, () => {
                for (const [_data, valid] of data) {
-                  const result = validate(cleanSchema(schema), _data);
+                  const result = validate(schema.toJSON(), _data);
                   expect(result).toBe(valid);
                }
             });

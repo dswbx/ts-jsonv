@@ -304,7 +304,7 @@ import addFormats from "ajv-formats";
 const ajv = new Ajv();
 addFormats(ajv); // Recommended for formats like 'email'
 
-const validate = ajv.compile(UserSchema);
+const validate = ajv.compile(UserSchema.toJSON());
 
 const validUser = { id: 1, username: "valid_user", email: "test@example.com" };
 const invalidUser = { id: 0, username: "no" }; // Fails minimum and minLength
@@ -329,13 +329,27 @@ const validator = new Validator();
 const validUser = { id: 1, username: "valid_user", email: "test@example.com" };
 const invalidUser = { id: 0, username: "no" };
 
-const resultValid = validator.validate(validUser, UserSchema);
+const resultValid = validator.validate(validUser, UserSchema.toJSON());
 console.log(resultValid.valid); // true
 // For errors: console.log(resultValid.errors);
 
-const resultInvalid = validator.validate(invalidUser, UserSchema);
+const resultInvalid = validator.validate(invalidUser, UserSchema.toJSON());
 console.log(resultInvalid.valid); // false
 // For errors: console.log(resultInvalid.errors);
+```
+
+### Using `json-schema-library`
+
+```ts
+import { compileSchema } from "json-schema-library";
+
+const schema = compileSchema(UserSchema.toJSON());
+
+const validUser = { id: 1, username: "valid_user", email: "test@example.com" };
+const invalidUser = { id: 0, username: "no" };
+
+console.log(schema.validate(validUser).valid); // true
+console.log(schema.validate(invalidUser).valid); // false
 ```
 
 ## Development

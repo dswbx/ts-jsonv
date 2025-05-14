@@ -26,6 +26,7 @@ export interface TSchemaFn {
    validate: (value: unknown, opts?: ValidationOptions) => ValidationResult;
    template: (opts?: TSchemaTemplateOptions) => unknown;
    coerce: (value: unknown) => unknown;
+   toJSON: () => object;
 }
 
 export type TOptional<Schema extends TSchema = TSchema> = {
@@ -155,6 +156,11 @@ export const schema = <
          if (s.const !== undefined) return s.const;
          if (s.template) return s.template(opts);
          return undefined;
+      },
+      toJSON: function () {
+         const raw = this[$raw];
+         if (isBoolean(raw)) return raw;
+         return JSON.parse(JSON.stringify(s));
       },
    } as any;
 };
