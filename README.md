@@ -1,6 +1,6 @@
 # simple-jsonschema-ts
 
-A radically simple and lightweight (1kb minified) TypeScript library for defining JSON schemas with static type inference. Nothing more, nothing less. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified.
+A simple and lightweight (5.5kb gzipped) TypeScript library for defining and validating JSON schemas with static type inference. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified. It has an integrated validator that can be used to validate instances against the latest JSON schema draft (draft-2020-12).
 
 ## Overview
 
@@ -25,7 +25,7 @@ import * as s from "simple-jsonschema-ts";
 const UserSchema = s.object({
    id: s.number(),
    username: s.string({ minLength: 3 }),
-   email: s.optional(s.string({ format: "email" })),
+   email: s.string({ format: "email" }).optional(),
 });
 // {
 //    "type": "object",
@@ -39,6 +39,7 @@ const UserSchema = s.object({
 
 // Infer the TypeScript type from the schema
 type User = s.Static<typeof UserSchema>;
+// { id: number; username: string; email?: string | undefined }
 
 // Example usage:
 const user: User = {
@@ -49,6 +50,25 @@ const user: User = {
 
 // Type checking works as expected:
 // const invalidUser: User = { id: 'abc', username: 'jd' }; // Type error
+
+// Use the integrated validation
+const result = UserSchema.validate(user);
+// { valid: true, errors: [] }
+
+const result2 = UserSchema.validate({ id: 1 });
+// {
+//  "valid": false,
+//  "errors": [
+//    {
+//      "keywordLocation": "/required",
+//      "instanceLocation": "/",
+//      "error": "Expected object with required properties id, username",
+//      "data": {
+//        "id": 1
+//      }
+//    }
+//  ]
+// }
 ```
 
 ## Motivation
@@ -145,14 +165,14 @@ type Tags = s.Static<typeof TagsSchema>; // string[]
 
 ### Objects
 
-Defines an object type with named `properties`. By default, all properties defined are required. Use `s.optional()` to mark properties as optional. Optional `schema` can include `required`, `additionalProperties`, `minProperties`, `maxProperties`.
+Defines an object type with named `properties`. By default, all properties defined are required. Use `optional()` to mark properties as optional. Optional `schema` can include `required`, `additionalProperties`, `minProperties`, `maxProperties`.
 
 ```ts
 const ProductSchema = s.object({
    productId: s.integer(),
    name: s.string(),
    price: s.number({ minimum: 0 }),
-   description: s.optional(s.string()), // Optional property
+   description: s.string().optional(), // Optional property
 });
 // {
 //   type: 'object',
@@ -179,7 +199,7 @@ You may also use the `s.strictObject()` function to create a strict object schem
 ```ts
 const UserSchema = s.strictObject({
    id: s.integer(),
-   username: s.optional(s.string()),
+   username: s.string().optional(),
 });
 // {
 //   type: "object",
@@ -195,7 +215,7 @@ const UserSchema = s.strictObject({
 const UserSchema = s.object(
    {
       id: s.integer(),
-      username: s.optional(s.string()),
+      username: s.string().optional(),
    },
    {
       additionalProperties: false,
@@ -235,7 +255,29 @@ const StringOrNumberSchema = s.anyOf([s.string(), s.number()]);
 type StringOrNumber = s.Static<typeof StringOrNumberSchema>; // string | number
 ```
 
-## Validation Status
+## Validation
+
+The schemas created with `simple-jsonschema-ts` are standard JSON Schema objects and can be used with any compliant validator. The library ensures that when the schema object is converted to JSON (e.g., using `JSON.stringify`), only standard JSON Schema properties are included, stripping any internal metadata. For the examples, this is going to be the base schema object.
+
+```ts
+const UserSchema = s.object({
+   id: s.integer({ minimum: 1 }),
+   username: s.string({ minLength: 3 }),
+   email: s.string({ format: "email" }).optional(),
+});
+// { id: number, username: string, email?: string }
+```
+
+### Integrated Validator
+
+The library includes an integrated validator that can be used to validate instances against the schema.
+
+```ts
+const result = UserSchema.validate({ id: 1, username: "valid_user" });
+// { valid: true, errors: [] }
+```
+
+**Validation Status**
 
 -  Total tests: 1906
 -  Passed: 1412 (74.08%)
@@ -243,20 +285,13 @@ type StringOrNumber = s.Static<typeof StringOrNumberSchema>; // string | number
 -  Failed: 0 (0.00%)
 -  Optional failed: 54 (2.83%)
 
-## Validation
+Currently unsupported, but planned:
 
-The schemas created with `jsonschema-ts` are standard JSON Schema objects and can be used with any compliant validator. The library ensures that when the schema object is converted to JSON (e.g., using `JSON.stringify`), only standard JSON Schema properties are included, stripping any internal metadata. For the examples, this is going to be the base schema object.
-
-```ts
-const UserSchema = s.object({
-   id: s.integer({ minimum: 1 }),
-   username: s.string({ minLength: 3 }),
-   email: s.optional(s.string({ format: "email" })),
-});
-// { id: number, username: string, email?: string }
-```
-
-Here are examples using popular validation libraries:
+-  [ ] `$ref` and `$defs`
+-  [ ] `unevaluatedItems` and `unevaluatedProperties`
+-  [ ] `contentMediaType`, `contentSchema` and `contentEncoding`
+-  [ ] meta schemas and `vocabulary`
+-  [ ] Additional optional formats: `idn-email`, `idn-hostname`, `iri`, `iri-reference`
 
 ### Using `ajv`
 
@@ -310,6 +345,7 @@ This project uses `bun` for package management and task running.
 -  **Install dependencies:** `bun install`
 -  **Run tests:** `bun test` (runs both type checks and unit tests)
 -  **Run unit tests:** `bun test:unit`
+-  **Run JSON Schema test suite:** `bun test:spec`
 -  **Run type checks:** `bun test:types`
 -  **Build the library:** `bun build` (output goes to the `dist` directory)
 
@@ -320,3 +356,6 @@ MIT
 ## Acknowledgements
 
 -  [TypeBox](https://github.com/sinclairzx81/typebox) for the inspiration, ideas, and some type inference snippets
+-  [@cfworker/json-schema](https://github.com/cfworker/json-schema) for some inspiration
+-  [schemasafe](https://github.com/ExodusMovement/schemasafe) for the format keywords
+-  [JSON Schema Test Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite) for the validation tests

@@ -53,6 +53,17 @@ const validators: {
 ] as const;
 
 describe("validation", () => {
+   test("readme", () => {
+      const UserSchema = s.object({
+         id: s.number(),
+         username: s.string({ minLength: 3 }),
+         email: s.string({ format: "email" }).optional(),
+      });
+
+      const result = UserSchema.validate({ id: 1 });
+      //console.log(JSON.stringify(result, null, 2));
+   });
+
    for (const { name, validate } of validators) {
       describe(name, () => {
          for (const { name, schema, data } of schemas) {
