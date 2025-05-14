@@ -1,6 +1,9 @@
+[![npm version](https://img.shields.io/npm/v/simple-jsonschema-ts.svg)](https://npmjs.org/package/simple-jsonschema-ts)
+![gzipped size of simple-jsonschema-ts](https://img.badgesize.io/https://unpkg.com/simple-jsonschema-ts@latest/dist/lib/index.js?compression=gzip&label=simple-jsonschema-ts)
+
 # simple-jsonschema-ts
 
-A simple and lightweight (5.5kb gzipped) TypeScript library for defining and validating JSON schemas with static type inference. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified. It has an integrated validator that can be used to validate instances against the latest JSON schema draft (draft-2020-12).
+A simple and lightweight (<6kb gzipped) TypeScript library for defining and validating JSON schemas with static type inference. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified. It has an integrated validator that can be used to validate instances against the latest JSON schema draft (draft-2020-12).
 
 ## Overview
 
