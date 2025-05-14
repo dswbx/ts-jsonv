@@ -28,11 +28,12 @@ describe("string", () => {
       expectTypeOf<(typeof schema)["pattern"]>().toEqualTypeOf<"/a/">();
       expectTypeOf<(typeof schema)["minLength"]>().toEqualTypeOf<1>();
 
-      // @ts-expect-error maxLength is not defined
-      schema.maxLength;
-
-      // @ts-expect-error $id is not defined
-      schema.$id;
+      expectTypeOf<(typeof schema)["maxLength"]>().toEqualTypeOf<
+         number | undefined
+      >();
+      expectTypeOf<(typeof schema)["$id"]>().toEqualTypeOf<
+         string | undefined
+      >();
    });
 
    test("with const", () => {

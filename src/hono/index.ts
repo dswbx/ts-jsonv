@@ -1,0 +1,1 @@
+export { honoValidator } from "./middleware";

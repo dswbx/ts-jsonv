@@ -3,7 +3,7 @@ import { validator } from "hono/validator";
 import type { Static } from "../lib/static";
 import type { TSchema } from "../lib/schema";
 
-export const jscValidator = <
+export const honoValidator = <
    Target extends keyof ValidationTargets,
    E extends Env,
    P extends string,
@@ -21,8 +21,8 @@ export const jscValidator = <
    return validator(target, async (value, c) => {
       const coersed = schema.coerce(value);
       const result = schema.validate(coersed);
-      if (result !== undefined) {
-         return c.json({ valid: false, error: result, schema }, 400);
+      if (!result.valid) {
+         return c.json({ ...result, schema }, 400);
       }
 
       return coersed as Out;

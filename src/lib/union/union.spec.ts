@@ -57,7 +57,7 @@ describe("union", () => {
          what: string;
       }>();
 
-      console.log(JSON.stringify(schema, null, 2));
+      //console.log(JSON.stringify(schema, null, 2));
       assertJson(schema, {
          type: "object",
          required: ["test", "what"],
@@ -81,7 +81,7 @@ describe("union", () => {
             foo: string(),
          }),
       ]);
-      console.log(schema);
+      //console.log(schema);
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{
          bar: number;

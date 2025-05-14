@@ -34,10 +34,10 @@ export interface ObjectSchema extends TSchemaBase, Partial<TSchemaFn> {
    properties: P;
 } */
 
-export type TObject<
-   P extends TProperties,
-   O extends ObjectSchema
-> = TCustomSchema<O, ObjectStatic<P>> & {
+export type TObject<P extends TProperties, O extends ObjectSchema> = Omit<
+   TCustomSchema<O, ObjectStatic<P>>,
+   "properties"
+> & {
    properties: P;
 };
 /*    
@@ -94,7 +94,7 @@ export const strictObject = <
 export type TPartialObject<
    P extends TProperties,
    O extends ObjectSchema
-> = TCustomSchema<O, PartialObjectStatic<P>> & {
+> = Omit<TCustomSchema<O, PartialObjectStatic<P>>, "properties"> & {
    properties: P;
 };
 

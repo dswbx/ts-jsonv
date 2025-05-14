@@ -1,13 +1,13 @@
 {
    "name": "simple-jsonschema-ts",
-   "main": "dist/index.js",
-   "module": "dist/index.js",
-   "types": "dist/index.d.ts",
-   "version": "0.1.1",
-   "description": "A radically simple and lightweight (1kb minified) TypeScript library for defining JSON schemas with static type inference. Nothing more, nothing less.",
+   "main": "dist/lib/index.js",
+   "module": "dist/lib/index.js",
+   "types": "dist/lib/index.d.ts",
+   "version": "0.2.1",
+   "description": "A simple and lightweight (5.5kb gzipped) TypeScript library for defining and validating JSON schemas with static type inference.",
    "repository": {
       "type": "git",
-      "url": "https://github.com/sinclairzx81/typebox"
+      "url": "git+https://github.com/dswbx/simple-jsonschema-ts.git"
    },
    "publishConfig": {
       "access": "public"
@@ -21,7 +21,7 @@
       "test:spec": "clear && bun run src/test/spec/run.ts",
       "build": "tsup",
       "fetch": "npx giget gh:json-schema-org/JSON-Schema-Test-Suite/tests src/test/spec/lib",
-      "prepublishOnly": "bun test && bun run build"
+      "prepublishOnly": "bun run test && bun run build"
    },
    "devDependencies": {
       "@cfworker/json-schema": "^4.1.1",
@@ -37,9 +37,23 @@
    "peerDependencies": {
       "typescript": "^5.0.0"
    },
+   "exports": {
+      ".": {
+         "import": "./dist/lib/index.js",
+         "types": "./dist/lib/index.d.ts"
+      },
+      "./hono": {
+         "import": "./dist/hono/index.js",
+         "types": "./dist/hono/index.d.ts"
+      }
+   },
    "tsup": {
       "entry": [
-         "src/lib/index.ts"
+         "src/lib/index.ts",
+         "src/hono/index.ts"
+      ],
+      "external": [
+         "hono"
       ],
       "format": "esm",
       "platform": "neutral",
@@ -51,7 +65,8 @@
    },
    "files": [
       "dist",
-      "README.md"
+      "README.md",
+      "!dist/metafile*"
    ],
    "keywords": [
       "json",

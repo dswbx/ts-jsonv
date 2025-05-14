@@ -103,7 +103,10 @@ export interface TSchema<Type = unknown> extends TSchemaBase, TSchemaFn {
    else?: TSchema;
 }
 
-export type TCustomSchema<Options extends TSchemaBase, Fallback = unknown> = {
+export type TCustomSchema<
+   Options extends TSchemaBase,
+   Fallback = unknown
+> = TSchema & {
    static: StaticConstEnum<Options, Fallback>;
    optional: () => TOptional<TCustomSchema<Options, Fallback>>;
 } & {

@@ -29,11 +29,12 @@ describe("number", () => {
       expectTypeOf<(typeof schema)["maximum"]>().toEqualTypeOf<1>();
       expectTypeOf<(typeof schema)["multipleOf"]>().toEqualTypeOf<1>();
 
-      // @ts-expect-error exclusiveMaximum is not defined
-      schema.exclusiveMaximum;
-
-      // @ts-expect-error $id is not defined
-      schema.$id;
+      expectTypeOf<(typeof schema)["exclusiveMaximum"]>().toEqualTypeOf<
+         number | undefined
+      >();
+      expectTypeOf<(typeof schema)["$id"]>().toEqualTypeOf<
+         string | undefined
+      >();
    });
 
    test("with const", () => {
