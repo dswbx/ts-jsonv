@@ -1,30 +1,70 @@
-import type { Env, Input, MiddlewareHandler, ValidationTargets } from "hono";
-import { validator } from "hono/validator";
-import type { Static } from "../lib/static";
-import type { TSchema } from "../lib/schema";
+import type {
+   Context,
+   Env,
+   Input,
+   MiddlewareHandler,
+   ValidationTargets,
+} from "hono";
+import { validator as honoValidator } from "hono/validator";
+import type { Static, StaticCoersed } from "../lib";
+import type { TAnySchema } from "../lib/schema";
 
-export const honoValidator = <
+export type Options = {
+   coerce?: boolean;
+   includeSchema?: boolean;
+};
+
+type ValidationResult = {
+   valid: boolean;
+   errors: {
+      keywordLocation: string;
+      instanceLocation: string;
+      error: string;
+      data?: unknown;
+   }[];
+};
+
+export type Hook<T, E extends Env, P extends string> = (
+   result: { result: ValidationResult; data: T },
+   c: Context<E, P>
+) => Response | Promise<Response> | void;
+
+export const validator = <
+   // @todo: somehow hono prevents the usage of TSchema
+   Schema extends TAnySchema,
    Target extends keyof ValidationTargets,
    E extends Env,
    P extends string,
-   const Schema extends TSchema = TSchema,
-   Out = Static<Schema>,
+   Opts extends Options = Options,
+   Out = Opts extends { coerce: false }
+      ? Static<Schema>
+      : StaticCoersed<Schema>,
    I extends Input = {
       in: { [K in Target]: Static<Schema> };
-      out: { [K in Target]: Static<Schema> };
+      out: { [K in Target]: StaticCoersed<Schema> };
    }
 >(
    target: Target,
-   schema: Schema
+   schema: Schema,
+   options?: Opts,
+   hook?: Hook<Out, E, P>
 ): MiddlewareHandler<E, P, I> => {
    // @ts-expect-error not typed well
-   return validator(target, async (value, c) => {
-      const coersed = schema.coerce(value);
-      const result = schema.validate(coersed);
+   return honoValidator(target, async (_value, c) => {
+      const value = options?.coerce !== false ? schema.coerce(_value) : _value;
+      // @ts-ignore
+      const result = schema.validate(value);
       if (!result.valid) {
          return c.json({ ...result, schema }, 400);
       }
 
-      return coersed as Out;
+      if (hook) {
+         const hookResult = hook({ result, data: value as Out }, c);
+         if (hookResult) {
+            return hookResult;
+         }
+      }
+
+      return value as Out;
    });
 };

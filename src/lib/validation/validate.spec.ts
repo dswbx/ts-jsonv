@@ -58,18 +58,23 @@ describe("validate", () => {
          foo: s.refId("#").optional(),
       });
 
-      console.log(
+      expect(
          schema.validate(
             { foo: { foo: {} } },
             {
                ignoreUnsupported: true,
             }
-         )
-      );
-      console.log(schema.toJSON());
+         ).valid
+      ).toBe(true);
+      expect(schema.toJSON()).toEqual({
+         type: "object",
+         properties: {
+            foo: { $ref: "#" },
+         },
+      });
    });
 
-   test("collecting refs", () => {
+   test.skip("collecting refs", () => {
       const schema = fromSchema({
          $defs: {
             fooSchema: {

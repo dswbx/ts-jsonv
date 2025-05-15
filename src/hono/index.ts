@@ -1,1 +1,1 @@
-export { honoValidator } from "./middleware";
+export { validator, type Options } from "./middleware";

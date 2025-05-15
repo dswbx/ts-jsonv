@@ -3,8 +3,8 @@ import {
    type TOptional,
    type TSchemaTemplateOptions,
    schema,
-   type TAnySchema,
    type TCustomSchema,
+   type TAnySchema,
 } from "../schema";
 import type {
    OptionalUndefined,
@@ -16,7 +16,7 @@ import { $optional } from "../symbols";
 import { invariant, isSchema, isValidPropertyName } from "../utils";
 
 export type PropertyName = string;
-export type TProperties = { [key in PropertyName]: TAnySchema | TOptional };
+export type TProperties = { [key in PropertyName]: TSchema };
 
 type ObjectStatic<T extends TProperties> = {
    [K in keyof T]: Static<T[K]>;
@@ -33,10 +33,10 @@ export interface ObjectSchema extends Omit<Partial<TSchema>, "properties"> {
    propertyNames?: TSchema;
 }
 
-export type TObject<P extends TProperties, O extends ObjectSchema> = Omit<
-   TCustomSchema<O, ObjectStatic<P>>,
-   "properties"
-> & {
+export type TObject<
+   P extends TProperties,
+   O extends ObjectSchema = ObjectSchema
+> = Omit<TCustomSchema<O, ObjectStatic<P>>, "properties"> & {
    properties: P;
    coerce: (value: unknown) => ObjectCoerced<P>;
 };
@@ -123,10 +123,7 @@ export const partialObject = <
    }) as any;
 };
 
-type RecordStatic<T extends TProperties> = Record<
-   string,
-   Static<{ static: ObjectStatic<T> }>
->;
+type RecordStatic<T extends TProperties> = Record<string, Static<TObject<T>>>;
 
 export interface RecordSchema extends Partial<TSchema> {
    additionalProperties: TSchema;

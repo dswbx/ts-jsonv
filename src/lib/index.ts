@@ -1,4 +1,10 @@
-export { type TSchema, type TOptional, schema, any } from "./schema";
+export {
+   type TSchema,
+   type TOptional,
+   type TAnySchema,
+   schema,
+   any,
+} from "./schema";
 export type { Static, StaticConstEnum, StaticCoersed } from "./static";
 export {
    object,
@@ -21,3 +27,8 @@ export { boolean } from "./boolean/boolean";
 export { anyOf, oneOf } from "./union/union";
 export { fromSchema } from "./schema/from-schema";
 export { ref, type TRef, refId, type TRefId } from "./ref/ref";
+export type {
+   ValidationResult,
+   ValidationOptions,
+} from "./validation/validate";
+export { error, type ErrorDetail, valid, makeOpts } from "./utils/details";

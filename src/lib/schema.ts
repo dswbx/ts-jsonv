@@ -35,10 +35,20 @@ export interface TSchemaFn {
    toJSON: () => object;
 }
 
+export interface TAnySchema<Type = unknown> {
+   optional: (() => TOptional) | never;
+   coerce: (value: unknown) => Type;
+   static: Type;
+   [$kind]: string;
+   [$raw]: any;
+   [$optional]?: boolean;
+}
+
 export interface TOptional<Schema extends TSchema = TSchema> extends TSchema {
    optional: never;
+   [$optional]: true;
    static: Static<Schema> | undefined;
-   coerce: (value: unknown) => StaticCoersed<Schema> | undefined;
+   coerce: (v: unknown) => StaticCoersed<Schema> | undefined;
 }
 
 export interface TSchemaBase {
@@ -103,17 +113,13 @@ export interface TSchemaBase {
    else?: TSchemaBase;
 }
 
-export type TAnySchema = {
-   static: unknown;
-   coerce: (value: unknown) => unknown;
-};
-
 export interface TSchema<Type = unknown> extends TSchemaBase, TSchemaFn {
    optional: () => TOptional<this>;
    coerce: (value: unknown) => Type;
    static: Type;
    [$kind]: string;
    [$raw]: any;
+   //[$optional]: boolean;
 
    // overrides
    $defs?: { [key in PropertyName]: TSchema };
@@ -196,7 +202,19 @@ export const schema = <
          return raw === false ? error(opts, "", "Always fails") : valid();
       }
 
-      return validate(s2 as any, value, opts);
+      // run custom validate if present
+      let errors = opts.errors || [];
+      if ("validate" in s) {
+         const result = s.validate(value, opts);
+         if (!result.valid) {
+            errors = [...errors, ...result.errors];
+         }
+      }
+
+      return validate(s2 as any, value, {
+         ...opts,
+         errors,
+      });
    };
 
    return s2 as any;
