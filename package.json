@@ -1,5 +1,5 @@
 {
-   "name": "jsonv",
+   "name": "jsonv-ts",
    "main": "dist/lib/index.js",
    "module": "dist/lib/index.js",
    "types": "dist/lib/index.d.ts",
@@ -8,7 +8,7 @@
    "description": "A simple, lightweight (<6kb gzipped) and dependency-free TypeScript library for defining and validating JSON schemas with static type inference.",
    "repository": {
       "type": "git",
-      "url": "git+https://github.com/dswbx/simple-jsonschema-ts.git"
+      "url": "git+https://github.com/dswbx/jsonv-ts.git"
    },
    "publishConfig": {
       "access": "public"
@@ -72,6 +72,8 @@
    "keywords": [
       "json",
       "schema",
+      "validator",
+      "validate",
       "jsonschema",
       "json-schema",
       "typescript"
