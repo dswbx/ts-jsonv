@@ -1,13 +1,13 @@
-[![npm version](https://img.shields.io/npm/v/ts-jsonv.svg)](https://npmjs.org/package/ts-jsonv)
-![gzipped size of ts-jsonv](https://img.badgesize.io/https://unpkg.com/ts-jsonv@latest/dist/lib/index.js?compression=gzip&label=ts-jsonv)
+[![npm version](https://img.shields.io/npm/v/jsonv-ts.svg)](https://npmjs.org/package/jsonv-ts)
+![gzipped size of jsonv-ts](https://img.badgesize.io/https://unpkg.com/jsonv-ts@latest/dist/lib/index.js?compression=gzip&label=jsonv-ts)
 
-# ts-jsonv
+# jsonv-ts
 
 A simple, lightweight (<6kb gzipped) and dependency-free TypeScript library for defining and validating JSON schemas with static type inference. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified. It has an integrated validator that can be used to validate instances against the latest JSON schema draft (2020-12).
 
 ## Overview
 
-`ts-jsonv` allows you to define JSON schemas using a TypeScript API. It provides functions for all standard JSON schema types (`object`, `string`, `number`, `array`, `boolean`) as well as common patterns like `optional` fields, union types (`anyOf`, `oneOf`, and `allOf`), and constants/enums. The `Static` type helper infers the corresponding TypeScript type directly from your schema definition.
+`jsonv-ts` allows you to define JSON schemas using a TypeScript API. It provides functions for all standard JSON schema types (`object`, `string`, `number`, `array`, `boolean`) as well as common patterns like `optional` fields, union types (`anyOf`, `oneOf`, and `allOf`), and constants/enums. The `Static` type helper infers the corresponding TypeScript type directly from your schema definition.
 
 -  Type-safe JSON schema definition in TypeScript.
 -  Static type inference from schemas using the `Static` helper.
@@ -17,13 +17,13 @@ A simple, lightweight (<6kb gzipped) and dependency-free TypeScript library for 
 ## Installation
 
 ```bash
-npm install ts-jsonv
+npm install jsonv-ts
 ```
 
 ## Example
 
 ```ts
-import * as s from "ts-jsonv";
+import * as s from "jsonv-ts";
 
 const UserSchema = s.object({
    id: s.number(),
@@ -250,7 +250,7 @@ Combine multiple schemas using union keywords:
 -  `allOf(schemas: TSchema[])`: Must match all of the provided schemas.
 
 ```ts
-import * as s from "ts-jsonv";
+import * as s from "jsonv-ts";
 
 const StringOrNumberSchema = s.anyOf([s.string(), s.number()]);
 // { anyOf: [ { type: 'string' }, { type: 'number' } ] }
@@ -260,7 +260,7 @@ type StringOrNumber = s.Static<typeof StringOrNumberSchema>; // string | number
 
 ## Validation
 
-The schemas created with `ts-jsonv` are standard JSON Schema objects and can be used with any compliant validator. The library ensures that when the schema object is converted to JSON (e.g., using `JSON.stringify`), only standard JSON Schema properties are included, stripping any internal metadata. For the examples, this is going to be the base schema object.
+The schemas created with `jsonv-ts` are standard JSON Schema objects and can be used with any compliant validator. The library ensures that when the schema object is converted to JSON (e.g., using `JSON.stringify`), only standard JSON Schema properties are included, stripping any internal metadata. For the examples, this is going to be the base schema object.
 
 ```ts
 const UserSchema = s.object({
@@ -322,7 +322,7 @@ This validator is designed for environments like Cloudflare Workers and is also 
 
 ```ts
 import { Validator } from "@cfworker/json-schema";
-import * as s from "ts-jsonv";
+import * as s from "jsonv-ts";
 
 const validator = new Validator();
 
