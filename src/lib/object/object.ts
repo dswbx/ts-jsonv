@@ -1,8 +1,6 @@
 import {
    type TSchema,
    type TOptional,
-   type TSchemaBase,
-   type TSchemaFn,
    type TSchemaTemplateOptions,
    schema,
    type TAnySchema,
@@ -27,12 +25,12 @@ type ObjectCoerced<T extends TProperties> = {
    [K in keyof T]: StaticCoersed<T[K]>;
 };
 
-export interface ObjectSchema extends TSchemaBase, Partial<TSchemaFn> {
-   patternProperties?: { [key: string]: TAnySchema };
-   additionalProperties?: TAnySchema | boolean;
+export interface ObjectSchema extends Omit<Partial<TSchema>, "properties"> {
+   patternProperties?: { [key: string]: TSchema };
+   additionalProperties?: TSchema;
    minProperties?: number;
    maxProperties?: number;
-   propertyNames?: TAnySchema;
+   propertyNames?: TSchema;
 }
 
 export type TObject<P extends TProperties, O extends ObjectSchema> = Omit<
@@ -68,9 +66,9 @@ export const object = <P extends TProperties, const O extends ObjectSchema>(
          type: "object",
          properties,
          required: required.length > 0 ? required : undefined,
-      } as any,
+      },
       "object"
-   );
+   ) as any;
 };
 
 export const strictObject = <
@@ -82,7 +80,7 @@ export const strictObject = <
 ): TObject<P, O> => {
    return object(properties, {
       ...options,
-      additionalProperties: false,
+      additionalProperties: schema(false),
    }) as any;
 };
 
@@ -121,7 +119,7 @@ export const partialObject = <
 
    return object(partial, {
       ...options,
-      additionalProperties: false,
+      additionalProperties: schema(false),
    }) as any;
 };
 
@@ -130,15 +128,23 @@ type RecordStatic<T extends TProperties> = Record<
    Static<{ static: ObjectStatic<T> }>
 >;
 
-export const record = <
-   P extends TProperties,
-   const O extends ObjectSchema & { additionalProperties: never }
->(
+export interface RecordSchema extends Partial<TSchema> {
+   additionalProperties: TSchema;
+}
+
+type TRecord<P extends TProperties, O extends RecordSchema> = Omit<
+   TCustomSchema<O, RecordStatic<P>>,
+   "additionalProperties"
+> & {
+   additionalProperties: P;
+};
+
+export const record = <P extends TProperties, const O extends RecordSchema>(
    properties: P,
    options: O = {} as O,
    apOptions?: Omit<ObjectSchema, "properties" | "required">
-) => {
-   return schema<RecordStatic<P>, O & { additionalProperties: P }>(
+): TRecord<P, O> => {
+   return schema(
       {
          template,
          coerce,
@@ -147,7 +153,7 @@ export const record = <
          additionalProperties: object(properties, apOptions),
       },
       "object"
-   );
+   ) as any;
 };
 
 function template(this: TSchema, opts: TSchemaTemplateOptions = {}) {

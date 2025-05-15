@@ -34,6 +34,8 @@ import {
    ifThenElse,
 } from "./keywords";
 import { format } from "./format";
+import { isSchema, isString } from "../utils";
+import { getJsonPath } from "../utils/path";
 
 type TKeywordFn = (
    schema: TSchema,
@@ -83,7 +85,10 @@ export type ValidationOptions = {
    errors?: ErrorDetail[];
    shortCircuit?: boolean;
    ignoreUnsupported?: boolean;
+   cache?: Map<string, TSchema>;
+   root?: TSchema;
 };
+type CtxValidationOptions = Required<ValidationOptions>;
 
 export type ValidationResult = {
    valid: boolean;
@@ -95,8 +100,18 @@ export function validate(
    _value: unknown,
    opts: ValidationOptions = {}
 ): ValidationResult {
-   let errors: ErrorDetail[] = opts?.errors || [];
+   console.log("---validate", s);
    const value = opts?.coerce ? s.coerce(_value) : _value;
+   const ctx: CtxValidationOptions = {
+      keywordPath: opts.keywordPath || [],
+      instancePath: opts.instancePath || [],
+      coerce: opts.coerce || false,
+      errors: opts.errors || [],
+      shortCircuit: opts.shortCircuit || false,
+      ignoreUnsupported: opts.ignoreUnsupported || false,
+      root: opts.root || s,
+      cache: opts.cache || new Map<string, TSchema>(),
+   };
 
    if (opts.ignoreUnsupported !== true) {
       // @todo: readOnly
@@ -110,29 +125,46 @@ export function validate(
       }
    }
 
-   for (const [keyword, validator] of Object.entries(keywords)) {
-      if (s[keyword] === undefined) continue;
-      const result = validator(s, value, {
-         ...opts,
-         errors,
+   // check $ref
+   if (value !== undefined && "$ref" in s && isString(s.$ref)) {
+      const ref = s.$ref;
+      let refSchema = ctx.cache.get(ref);
+      if (!refSchema) {
+         // get ref from root
+         refSchema = getJsonPath(ctx.root, ref);
+         if (!isSchema(refSchema)) {
+            throw new Error(`ref not found: ${ref}`);
+         }
+         ctx.cache.set(ref, refSchema);
+      }
+      const result = refSchema.validate(value, {
+         ...ctx,
+         errors: [],
       });
       if (!result.valid) {
-         if (opts.shortCircuit) {
-            return result;
-         }
-         errors = result.errors;
+         // @todo: leads to duplicate errors
+         ctx.errors.push(...result.errors);
       }
-   }
-
-   if (s.validate) {
-      const result = s.validate(value, opts);
-      if (!result.valid) {
-         errors = result.errors;
+   } else {
+      for (const [keyword, validator] of Object.entries(keywords)) {
+         if (s[keyword] === undefined) continue;
+         const result = validator(s, value, {
+            ...ctx,
+            errors: [],
+         });
+         if (!result.valid) {
+            if (opts.shortCircuit) {
+               return result;
+            }
+            ctx.errors.push(...result.errors);
+         }
       }
    }
 
    return {
-      valid: errors.length === 0,
-      errors,
+      valid: ctx.errors.length === 0,
+      errors: ctx.errors,
+      // @ts-ignore
+      $refs: Object.fromEntries(ctx.cache.entries()),
    };
 }

@@ -1,9 +1,18 @@
 import { describe, expect, test } from "bun:test";
-import { validate } from "./validate";
 import * as s from "../";
 import { schema } from "../schema";
+import { fromSchema } from "../";
+import { ref } from "../ref/ref";
 
 describe("validate", () => {
+   test("error count", () => {
+      const result = s.string({ minLength: 10, pattern: "/a/" }).validate("b");
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBe(2);
+      expect(result.errors[0]?.keywordLocation).toBe("/minLength");
+      expect(result.errors[1]?.keywordLocation).toBe("/pattern");
+   });
+
    test("boolean schema", () => {
       const falsy = schema(false).validate(undefined);
       expect(falsy.valid).toBe(false);
@@ -16,23 +25,21 @@ describe("validate", () => {
    });
 
    test("multiple vs single errors", () => {
-      const result = validate(
-         s.string({ minLength: 10, pattern: "^[0-9]+$" }),
-         "what"
-      );
+      const result = s
+         .string({ minLength: 10, pattern: "^[0-9]+$" })
+         .validate("what");
+
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBe(2);
       expect(result.errors[0]?.keywordLocation).toBe("/minLength");
       expect(result.errors[1]?.keywordLocation).toBe("/pattern");
 
       {
-         const result = validate(
-            s.string({ minLength: 10, pattern: "^[0-9]+$" }),
-            "what",
-            {
+         const result = s
+            .string({ minLength: 10, pattern: "^[0-9]+$" })
+            .validate("what", {
                shortCircuit: true,
-            }
-         );
+            });
          expect(result.valid).toBe(false);
          expect(result.errors.length).toBe(1);
          expect(result.errors[0]?.keywordLocation).toBe("/minLength");
@@ -40,64 +47,108 @@ describe("validate", () => {
    });
 
    test("multiple types", () => {
-      const multi = schema({ type: ["string", "number"] });
+      const multi = fromSchema({ type: ["string", "number"] });
       expect(multi.validate("hello").valid).toBe(true);
       expect(multi.validate(1).valid).toBe(true);
       expect(multi.validate(true).errors[0]?.keywordLocation).toBe("/type");
    });
 
+   test.only("ref", () => {
+      const refSchema = s.string({ $id: "what" });
+      const schema = s.object({
+         foo: s.ref(refSchema),
+      });
+
+      console.log(
+         schema.validate(
+            { foo: "bar" },
+            {
+               ignoreUnsupported: true,
+            }
+         )
+      );
+      console.log(schema.toJSON());
+   });
+
+   test("collecting refs", () => {
+      const schema = fromSchema({
+         $defs: {
+            fooSchema: {
+               //type: "string",
+               minLength: 2,
+            },
+         },
+         properties: {
+            foo: {
+               $ref: "#/$defs/fooSchema",
+            },
+         },
+      });
+      console.log(schema);
+
+      console.log("--------------------------------");
+      console.log(
+         schema.validate(
+            { foo: "1" },
+            {
+               ignoreUnsupported: true,
+            }
+         )
+      );
+   });
+
    test.skip("validate", () => {
       {
-         expect(validate(s.string(), "hello").valid).toBe(true);
-         expect(validate(s.string(), 1).errors[0]?.keywordLocation).toBe(
+         expect(s.string().validate("hello").valid).toBe(true);
+         expect(s.string().validate(1).errors[0]?.keywordLocation).toBe(
             "/type"
          );
          expect(
-            validate(s.string({ minLength: 1 }), "").errors[0]?.keywordLocation
+            s.string({ minLength: 1 }).validate("").errors[0]?.keywordLocation
          ).toBe("/minLength");
-         expect(validate(s.string({ minLength: 1 }), "123").valid).toBe(true);
+         expect(s.string({ minLength: 1 }).validate("123").valid).toBe(true);
          expect(
-            validate(s.string({ maxLength: 1 }), "123").errors[0]
+            s.string({ maxLength: 1 }).validate("123").errors[0]
                ?.keywordLocation
          ).toBe("/maxLength");
          expect(
-            validate(s.string({ maxLength: 1 }), "1234").errors[0]
+            s.string({ maxLength: 1 }).validate("1234").errors[0]
                ?.keywordLocation
          ).toBe("/maxLength");
-         expect(validate(s.string({ pattern: "^[0-9]+$" }), "123").valid).toBe(
+         expect(s.string({ pattern: "^[0-9]+$" }).validate("123").valid).toBe(
             true
          );
          expect(
-            validate(s.string({ pattern: "^[0-9]+$" }), "abc").errors[0]
+            s.string({ pattern: "^[0-9]+$" }).validate("abc").errors[0]
                ?.keywordLocation
          ).toBe("/pattern");
       }
 
       {
-         expect(validate(s.number(), "123").errors[0]?.keywordLocation).toBe(
+         expect(s.number().validate("123").errors[0]?.keywordLocation).toBe(
             "/type"
          );
          expect(
-            validate(s.number({ multipleOf: 2 }), 1).errors[0]?.keywordLocation
+            s.number({ multipleOf: 2 }).validate(1).errors[0]?.keywordLocation
          ).toBe("/multipleOf");
-         expect(validate(s.number({ multipleOf: 2 }), 2).valid).toBe(true);
+         expect(s.number({ multipleOf: 2 }).validate(2).valid).toBe(true);
          expect(
-            validate(s.number({ multipleOf: 2 }), 3).errors[0]?.keywordLocation
+            s.number({ multipleOf: 2 }).validate(3).errors[0]?.keywordLocation
          ).toBe("/multipleOf");
-         expect(validate(s.number({ maximum: 1 }), 0).valid).toBe(true);
+         expect(s.number({ maximum: 1 }).validate(0).valid).toBe(true);
          expect(
-            validate(s.number({ maximum: 1 }), 2).errors[0]?.keywordLocation
+            s.number({ maximum: 1 }).validate(2).errors[0]?.keywordLocation
          ).toBe("/maximum");
          expect(
-            validate(s.number({ exclusiveMaximum: 1 }), 1).errors[0]
+            s.number({ exclusiveMaximum: 1 }).validate(1).errors[0]
                ?.keywordLocation
          ).toBe("/exclusiveMaximum");
-         expect(validate(s.number({ minimum: 1 }), 1).valid).toBe(true);
+         expect(s.number({ minimum: 1 }).validate(1).valid).toBe(true);
          expect(
-            validate(s.number({ minimum: 1 }), 0).errors[0]?.keywordLocation
+            s.number({ minimum: 1 }).validate(0).errors[0]?.keywordLocation
          ).toBe("/minimum");
          expect(
-            validate(s.number({ exclusiveMinimum: 1 }), 1).errors[0]
+            s.number({ exclusiveMinimum: 1 }).validate(1).errors[0]
                ?.keywordLocation
          ).toBe("/exclusiveMinimum");
       }

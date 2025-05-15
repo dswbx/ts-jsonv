@@ -233,11 +233,10 @@ describe("object", () => {
 
          {
             // patternProperties ignores additionalProperties
-            const result = object(
+            const result = strictObject(
                { a: number() },
                {
                   patternProperties: { "^b": string() },
-                  additionalProperties: false,
                }
             ).validate({ a: 11, b: "2" });
             expect(result.valid).toBe(true);

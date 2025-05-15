@@ -1,12 +1,7 @@
-import {
-   schema,
-   type TCustomSchema,
-   type TSchemaBase,
-   type TSchemaFn,
-} from "../schema";
+import { schema, type TCustomSchema, type TSchema } from "../schema";
 import type { Merge, Simplify } from "../static";
 
-export interface StringSchema extends TSchemaBase, Partial<TSchemaFn> {
+export interface StringSchema extends Partial<TSchema> {
    maxLength?: number;
    minLength?: number;
    pattern?: string;
@@ -35,12 +30,15 @@ export const stringConst = <
    constValue: ConstValue,
    config: Partial<S> = {}
 ): TString<Simplify<Merge<S & { const: ConstValue }>>> =>
-   schema({
-      const: constValue,
-      default: constValue,
-      readOnly: true,
-      template: () => constValue,
-      coerce: (value: unknown) => String(value),
-      ...config,
-      type: "string",
-   }) as any;
+   schema(
+      {
+         const: constValue,
+         default: constValue,
+         readOnly: true,
+         template: () => constValue,
+         coerce: (value: unknown) => String(value),
+         ...config,
+         type: "string",
+      },
+      "string"
+   ) as any;

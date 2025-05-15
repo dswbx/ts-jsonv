@@ -1,6 +1,6 @@
 import type { TSchema } from "../schema";
 import { InvariantError } from "../errors";
-import { $kind } from "../symbols";
+import { $kind, $raw } from "../symbols";
 import type {
    BaseJSONSchema,
    PropertyName,
@@ -59,8 +59,10 @@ export function isSchema(schema: unknown): schema is TSchema {
    return isObject(schema) && $kind in schema;
 }
 
-export function isBooleanSchema(schema: unknown): schema is TSchema {
-   return isSchema(schema) && schema[$kind] === "booleanSchema";
+export function isBooleanSchema(schema: unknown): schema is TSchema & {
+   [$raw]: boolean;
+} {
+   return isSchema(schema) && isBoolean(schema[$raw]);
 }
 
 export function matchesPattern(pattern: string, value: string): boolean {

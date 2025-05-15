@@ -1,9 +1,8 @@
 import {
-   type TSchemaBase,
-   type TSchemaFn,
    schema,
    type TAnySchema,
    type TCustomSchema,
+   type TSchema,
 } from "../schema";
 import type { Static, StaticCoersed } from "../static";
 import { isSchema, invariant, isBoolean } from "../utils";
@@ -11,17 +10,17 @@ import { isSchema, invariant, isBoolean } from "../utils";
 type ArrayStatic<T extends TAnySchema> = Static<T>[] & {};
 type ArrayCoerced<T extends TAnySchema> = StaticCoersed<T>[] & {};
 
-export interface ArraySchema extends TSchemaBase, Partial<TSchemaFn> {
-   contains?: TAnySchema;
+export interface ArraySchema extends Omit<Partial<TSchema>, "items"> {
+   contains?: TSchema;
    minContains?: number;
    maxContains?: number;
-   prefixItems?: TAnySchema[];
+   prefixItems?: TSchema[];
    uniqueItems?: boolean;
    maxItems?: number;
    minItems?: number;
 }
 
-type TArray<Items extends TAnySchema, O extends ArraySchema> = TCustomSchema<
+type TArray<Items extends TSchema, O extends ArraySchema> = TCustomSchema<
    O,
    ArrayStatic<Items>
 > & {
@@ -29,11 +28,8 @@ type TArray<Items extends TAnySchema, O extends ArraySchema> = TCustomSchema<
    coerce: (value: unknown) => ArrayCoerced<Items>;
 };
 
-export const array = <
-   const Items extends TAnySchema,
-   const O extends ArraySchema
->(
-   items: Items | boolean,
+export const array = <const Items extends TSchema, const O extends ArraySchema>(
+   items: Items,
    options: O = {} as O
 ): TArray<Items, O> => {
    if (items !== undefined) {
@@ -47,9 +43,9 @@ export const array = <
          ...options,
          type: "array",
          items,
-      } as any,
+      },
       "array"
-   );
+   ) as any;
 };
 
 function coerce(

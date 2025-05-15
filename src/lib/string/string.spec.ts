@@ -167,6 +167,7 @@ describe("string", () => {
             "/minLength"
          );
          expect(schema.validate("abcd").valid).toBe(true);
+         console.log("custom", schema.validate("throw"));
          expect(schema.validate("throw").errors[0]?.error).toEqual("throw");
       });
    });

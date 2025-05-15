@@ -1,11 +1,6 @@
-import {
-   schema,
-   type TCustomSchema,
-   type TSchemaBase,
-   type TSchemaFn,
-} from "../schema";
+import { schema, type TCustomSchema, type TSchema } from "../schema";
 
-export interface NumberSchema extends TSchemaBase, Partial<TSchemaFn> {
+export interface NumberSchema extends Partial<TSchema> {
    multipleOf?: number;
    maximum?: number;
    exclusiveMaximum?: number;
@@ -16,26 +11,26 @@ export interface NumberSchema extends TSchemaBase, Partial<TSchemaFn> {
 export type TNumber<O extends NumberSchema> = TCustomSchema<O, number>;
 
 export const number = <const S extends NumberSchema>(
-   config: S = {} as S
+   options: S = {} as S
 ): TNumber<S> =>
    schema(
       {
          coerce: (value: unknown) => Number(value),
          template,
-         ...config,
+         ...options,
          type: "number",
       },
       "number"
    ) as any;
 
 export const integer = <const S extends NumberSchema>(
-   config: S = {} as S
+   options: S = {} as S
 ): TNumber<S> =>
    schema(
       {
          coerce: (value: unknown) => Number(value),
          template,
-         ...config,
+         ...options,
          type: "integer",
       },
       "integer"

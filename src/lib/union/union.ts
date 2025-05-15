@@ -29,8 +29,7 @@ type StaticUnionCoerced<T extends TAnySchema[]> = T extends [
       : never
    : never;
 
-type UnionSchema = Omit<TSchema, keyof TSchemaFn | "static" | "optional"> &
-   Partial<TSchemaFn>;
+export interface UnionSchema extends Partial<TSchema> {}
 
 export type TAnyOf<
    T extends TAnySchema[],
@@ -42,7 +41,7 @@ export type TAnyOf<
 };
 
 export const anyOf = <
-   const T extends TAnySchema[],
+   const T extends TSchema[],
    const O extends Omit<UnionSchema, "anyOf">
 >(
    schemas: T,
@@ -67,7 +66,7 @@ export type TOneOf<
 
 export const oneOf = <
    const T extends TAnySchema[],
-   const O extends Omit<TSchemaBase, "oneOf">
+   const O extends Omit<TSchema, "oneOf">
 >(
    schemas: T,
    options: O = {} as O
@@ -103,7 +102,7 @@ export type TAllOf<
 // use with caution!
 export const allOf = <
    const T extends TAnySchema[],
-   const O extends Omit<TSchemaBase, "allOf">
+   const O extends Omit<TSchema, "allOf">
 >(
    schemas: T,
    options: O = {} as O
