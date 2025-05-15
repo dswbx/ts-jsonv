@@ -1,6 +1,6 @@
 import { expectTypeOf } from "expect-type";
 import { type Static, type StaticCoersed } from "../static";
-import { ref } from "./ref";
+import { ref, refId } from "./ref";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
 import { string, number, object, anyOf } from "../";
@@ -28,6 +28,20 @@ describe("ref", () => {
    test("prefix", () => {
       const schema = ref(string({ $id: "string" }), "definitions");
       expect(schema.$ref).toEqual("#/definitions/string");
+   });
+
+   test("refId", () => {
+      const s = refId("#/$defs/string");
+      expect(s.$ref).toEqual("#/$defs/string");
+      expectTypeOf<(typeof s)["$ref"]>().toEqualTypeOf<"#/$defs/string">();
+      const s2 = refId("string");
+      expectTypeOf<(typeof s2)["$ref"]>().toEqualTypeOf<"#/$defs/string">();
+      expect(s2.$ref).toEqual("#/$defs/string");
+
+      const s3 = refId<{ foo: 1 }>("whatever");
+      expectTypeOf<(typeof s3)["$ref"]>().toEqualTypeOf<`#/$defs/${string}`>();
+      expectTypeOf<Static<typeof s3>>().toEqualTypeOf<{ foo: 1 }>();
+      expect(s3.$ref).toEqual("#/$defs/whatever");
    });
 
    test("rec with coerce", () => {

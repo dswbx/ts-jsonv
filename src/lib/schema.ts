@@ -1,5 +1,11 @@
 import { $kind, $optional, $raw } from "./symbols";
-import type { Static, StaticCoersed, StaticConstEnum } from "./static";
+import type {
+   Merge,
+   Simplify,
+   Static,
+   StaticCoersed,
+   StaticConstEnum,
+} from "./static";
 import { isBoolean, isObject } from "./utils";
 import { validate } from "./validation/validate";
 import type {
@@ -29,11 +35,21 @@ export interface TSchemaFn {
    toJSON: () => object;
 }
 
-export type TOptional<Schema extends TSchema = TSchema> = {
+export interface TAnySchema<Type = unknown> {
+   optional: (() => TOptional) | never;
+   coerce: (value: unknown) => Type;
+   static: Type;
+   [$kind]: string;
+   [$raw]: any;
+   [$optional]?: boolean;
+}
+
+export interface TOptional<Schema extends TSchema = TSchema> extends TSchema {
    optional: never;
+   [$optional]: true;
    static: Static<Schema> | undefined;
-   coerce: (value: unknown) => StaticCoersed<Schema> | undefined;
-};
+   coerce: (v: unknown) => StaticCoersed<Schema> | undefined;
+}
 
 export interface TSchemaBase {
    // basic/meta
@@ -52,18 +68,6 @@ export interface TSchemaBase {
    type?: JSONSchemaTypeName | JSONSchemaTypeName[];
    enum?: readonly any[] | any[];
    const?: any;
-}
-
-export type TAnySchema = {
-   static: unknown;
-   coerce: (value: unknown) => unknown;
-};
-
-export interface TSchema<Type = unknown> extends TSchemaBase, TSchemaFn {
-   // internal
-   optional: () => TOptional<this>;
-   coerce: (value: unknown) => Type;
-   static: Type;
 
    // string
    maxLength?: number;
@@ -79,26 +83,54 @@ export interface TSchema<Type = unknown> extends TSchemaBase, TSchemaFn {
    exclusiveMinimum?: number;
 
    // array
-   items?: TSchema | boolean;
+   items?: TSchemaBase | boolean;
    uniqueItems?: boolean;
    maxItems?: number;
    minItems?: number;
-   contains?: TSchema;
+   contains?: TSchemaBase;
    minContains?: number;
    maxContains?: number;
-   prefixItems?: TSchema[];
+   prefixItems?: TSchemaBase[];
 
    // object
-   properties?: { [key in PropertyName]: TSchema };
-   patternProperties?: { [key: string]: TSchema };
-   additionalProperties?: TSchema | boolean;
+   properties?: { [key in PropertyName]: TSchemaBase };
+   patternProperties?: { [key: string]: TSchemaBase };
+   additionalProperties?: TSchemaBase | boolean;
    required?: PropertyName[];
    minProperties?: number;
    maxProperties?: number;
-   propertyNames?: TSchema;
+   propertyNames?: TSchemaBase;
    dependentRequired?: { [key in PropertyName]: PropertyName[] };
-   dependentSchemas?: { [key in PropertyName]: TSchema };
+   dependentSchemas?: { [key in PropertyName]: TSchemaBase };
+
    // Combining schemas
+   allOf?: TSchemaBase[];
+   anyOf?: TSchemaBase[];
+   oneOf?: TSchemaBase[];
+   not?: TSchemaBase;
+   if?: TSchemaBase;
+   then?: TSchemaBase;
+   else?: TSchemaBase;
+}
+
+export interface TSchema<Type = unknown> extends TSchemaBase, TSchemaFn {
+   optional: () => TOptional<this>;
+   coerce: (value: unknown) => Type;
+   static: Type;
+   [$kind]: string;
+   [$raw]: any;
+   //[$optional]: boolean;
+
+   // overrides
+   $defs?: { [key in PropertyName]: TSchema };
+   items?: TSchema;
+   contains?: TSchema;
+   prefixItems?: TSchema[];
+   properties?: { [key in PropertyName]: TSchema };
+   patternProperties?: { [key: string]: TSchema };
+   additionalProperties?: TSchema;
+   propertyNames?: TSchema;
+   dependentSchemas?: { [key in PropertyName]: TSchema };
    allOf?: TSchema[];
    anyOf?: TSchema[];
    oneOf?: TSchema[];
@@ -121,24 +153,27 @@ export type TCustomSchema<
 
 export const schema = <
    const Type = unknown,
-   const S extends TSchemaBase | boolean = TSchemaBase,
+   const S extends Partial<TSchema> | boolean = Partial<TSchema>,
    Static = S extends { const?: unknown; enum?: unknown }
       ? StaticConstEnum<S, Type>
       : Type
 >(
    _s: S = {} as S,
    kind: string = "any"
-): TSchema<Static> & S => {
+): TSchema<Static> => {
    const s = (isObject(_s) ? _s : {}) as unknown as TSchema;
+   // @ts-ignore
+   const raw = isBoolean(_s) ? _s : $raw in _s ? _s[$raw] : undefined;
 
-   return {
+   const s2 = {
       ...s,
       [$kind]: kind,
-      [$raw]: _s,
+      [$raw]: raw,
       optional: function (this: TSchema) {
          return schema(
             {
                ...this,
+               [$raw]: raw,
                [$optional]: true,
             },
             kind
@@ -147,18 +182,6 @@ export const schema = <
       coerce: function (value: unknown) {
          if (s.coerce) return s.coerce(value);
          return value;
-      },
-      validate: function (
-         this: TSchema,
-         value: unknown,
-         opts: ValidationOptions = {}
-      ) {
-         const raw = this[$raw];
-         if (isBoolean(raw)) {
-            return raw === false ? error(opts, "", "Always fails") : valid();
-         }
-
-         return validate(s, value, opts);
       },
       template: function (opts: TSchemaTemplateOptions = {}) {
          if (s.default !== undefined) return s.default;
@@ -171,7 +194,30 @@ export const schema = <
          if (isBoolean(raw)) return raw;
          return JSON.parse(JSON.stringify(s));
       },
-   } as any;
+   };
+
+   // important to split here, to get all schema methods (required for isSchema check)
+   s2.validate = function (value: unknown, opts: ValidationOptions = {}) {
+      if (isBoolean(raw)) {
+         return raw === false ? error(opts, "", "Always fails") : valid();
+      }
+
+      // run custom validate if present
+      let errors = opts.errors || [];
+      if ("validate" in s) {
+         const result = s.validate(value, opts);
+         if (!result.valid) {
+            errors = [...errors, ...result.errors];
+         }
+      }
+
+      return validate(s2 as any, value, {
+         ...opts,
+         errors,
+      });
+   };
+
+   return s2 as any;
 };
 
 export const any = <O extends TSchema>(

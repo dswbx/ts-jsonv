@@ -1,10 +1,10 @@
 import { expectTypeOf } from "expect-type";
 import type { Static, StaticCoersed } from "../static";
 import { object, partialObject, record, strictObject } from "./object";
-import { any } from "../schema";
+import { any, type TSchema } from "../schema";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, boolean } from "../";
+import { string, number, boolean, array } from "../";
 import { $kind } from "../symbols";
 
 describe("object", () => {
@@ -233,11 +233,10 @@ describe("object", () => {
 
          {
             // patternProperties ignores additionalProperties
-            const result = object(
+            const result = strictObject(
                { a: number() },
                {
                   patternProperties: { "^b": string() },
-                  additionalProperties: false,
                }
             ).validate({ a: 11, b: "2" });
             expect(result.valid).toBe(true);
@@ -272,6 +271,19 @@ describe("object", () => {
       });
    });
 
+   test("typing", () => {
+      const schema = object({
+         url: string({
+            pattern: "^https?://",
+            coerce: () => "what" as const,
+         }),
+         force: boolean({ coerce: () => true as const }).optional(),
+      });
+      type Helper<S extends TSchema> = Static<S>;
+      type Out = Helper<typeof schema>;
+      //   ^?
+   });
+
    test("coerce", () => {
       const schema = object({
          name: string(),
@@ -296,6 +308,37 @@ describe("object", () => {
          expectTypeOf<StringCoerced>().toEqualTypeOf<"asdf">();
          type Coerced = StaticCoersed<typeof schema>;
          expectTypeOf<Coerced>().toEqualTypeOf<{ name: "asdf" }>();
+      }
+
+      {
+         const a = array(
+            string({
+               pattern: "/^https?:///",
+               coerce: () => "asdf" as const,
+            })
+         );
+         type Coerced = StaticCoersed<typeof a>;
+         expectTypeOf<Coerced>().toEqualTypeOf<"asdf"[]>();
+      }
+
+      {
+         const s = object({
+            url: string({
+               pattern: "/^https?:///",
+               coerce: (value) => "asdf" as const,
+            }),
+            force: boolean().optional(),
+         });
+         type Inferred = Static<typeof s>;
+         expectTypeOf<Inferred>().toEqualTypeOf<{
+            url: string;
+            force?: boolean;
+         }>();
+         type Coerced = StaticCoersed<typeof s>;
+         expectTypeOf<Coerced>().toEqualTypeOf<{
+            url: "asdf";
+            force?: boolean;
+         }>();
       }
    });
 });

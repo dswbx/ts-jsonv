@@ -17,7 +17,10 @@
       "noImplicitAny": false,
       "noUnusedLocals": false,
       "noUnusedParameters": false,
-      "noPropertyAccessFromIndexSignature": false
+      "noPropertyAccessFromIndexSignature": false,
+      "paths": {
+         "jsonv-ts": ["./src/lib/index.ts"]
+      }
    },
    "include": ["src/**/*.ts"],
    "exclude": ["node_modules", "dist"]

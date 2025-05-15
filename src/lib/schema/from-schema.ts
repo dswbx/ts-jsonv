@@ -52,7 +52,7 @@ export function fromSchema<Type = unknown>(_schema: any): lib.TSchema<Type> {
          }
       );
    }
-   const records = ["patternProperties", "dependentSchemas"];
+   const records = ["patternProperties", "dependentSchemas", "$defs"];
    for (const key of records) {
       if (key in schema && schema[key]) {
          schema[key] = eachObject(schema[key], fromSchema);
@@ -112,5 +112,6 @@ export function fromSchema<Type = unknown>(_schema: any): lib.TSchema<Type> {
       }
    }
 
+   //console.log("--fallback", { schema });
    return lib.schema(schema as any);
 }

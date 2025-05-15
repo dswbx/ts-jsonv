@@ -54,7 +54,8 @@
          "src/hono/index.ts"
       ],
       "external": [
-         "hono"
+         "hono",
+         "jsonv-ts"
       ],
       "format": "esm",
       "platform": "neutral",

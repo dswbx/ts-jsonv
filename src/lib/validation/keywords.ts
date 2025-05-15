@@ -289,7 +289,7 @@ export const properties = (
    for (const [key, keyValue] of Object.entries(value)) {
       const schema = properties[key];
       // missing schema will be validated by additionalProperties
-      if (!schema) continue;
+      if (!isSchema(schema)) continue;
       const result = schema.validate(
          keyValue,
          makeOpts(opts, ["properties", key], key)
@@ -305,7 +305,7 @@ export const additionalProperties = (
    opts: Opts = {}
 ) => {
    if (!isObject(value)) return valid();
-   if (!isBoolean(additionalProperties) && !isSchema(additionalProperties)) {
+   if (!isSchema(additionalProperties)) {
       throw new InvalidTypeError(
          "additionalProperties must be a boolean or a managed schema"
       );
@@ -323,8 +323,7 @@ export const additionalProperties = (
    );
    if (extra.length > 0) {
       if (isBooleanSchema(additionalProperties)) {
-         const result = additionalProperties.validate(undefined);
-         if (result) return result;
+         return additionalProperties.validate(undefined);
       } else if (isSchema(additionalProperties)) {
          for (const key of extra) {
             const result = additionalProperties.validate(

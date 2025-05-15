@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { type Static } from "../static";
+import { type Static, type StaticCoersed } from "../static";
 import { string, stringConst } from "./string";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -159,7 +159,7 @@ describe("string", () => {
          const schema = string({
             minLength: 3,
             validate: (value, opts) => {
-               if (value === "throw") return error(opts, "minLength", "throw");
+               if (value === "throw") return error(opts, "validate", "throw");
                return valid();
             },
          });
@@ -167,6 +167,7 @@ describe("string", () => {
             "/minLength"
          );
          expect(schema.validate("abcd").valid).toBe(true);
+         //console.log("custom", schema.validate("throw"));
          expect(schema.validate("throw").errors[0]?.error).toEqual("throw");
       });
    });
@@ -189,5 +190,15 @@ describe("string", () => {
             coerce: (value) => String(value) + "!",
          }).coerce("hello")
       ).toEqual("hello!");
+
+      // with props
+      const schema = string({
+         pattern: "/a/",
+         coerce: () => "value" as const,
+      });
+      type Inferred = Static<typeof schema>;
+      type Coerced = StaticCoersed<typeof schema>;
+      expectTypeOf<Inferred>().toEqualTypeOf<string>();
+      expectTypeOf<Coerced>().toEqualTypeOf<"value">();
    });
 });
