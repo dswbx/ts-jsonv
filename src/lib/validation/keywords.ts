@@ -289,7 +289,10 @@ export const properties = (
    for (const [key, keyValue] of Object.entries(value)) {
       const schema = properties[key];
       // missing schema will be validated by additionalProperties
-      if (!schema) continue;
+      if (!isSchema(schema)) {
+         console.log("-- not a schema", { key, schema });
+         continue;
+      }
       const result = schema.validate(
          keyValue,
          makeOpts(opts, ["properties", key], key)

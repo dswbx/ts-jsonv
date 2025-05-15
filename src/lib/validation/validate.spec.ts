@@ -54,14 +54,13 @@ describe("validate", () => {
    });
 
    test.only("ref", () => {
-      const refSchema = s.string({ $id: "what" });
       const schema = s.object({
-         foo: s.ref(refSchema),
+         foo: s.refId("#").optional(),
       });
 
       console.log(
          schema.validate(
-            { foo: "bar" },
+            { foo: { foo: {} } },
             {
                ignoreUnsupported: true,
             }

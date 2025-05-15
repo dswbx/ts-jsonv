@@ -156,9 +156,10 @@ export const schema = <
    kind: string = "any"
 ): TSchema<Static> => {
    const s = (isObject(_s) ? _s : {}) as unknown as TSchema;
-   const raw = isBoolean(_s) ? _s : undefined;
+   // @ts-ignore
+   const raw = isBoolean(_s) ? _s : $raw in _s ? _s[$raw] : undefined;
 
-   return {
+   const s2 = {
       ...s,
       [$kind]: kind,
       [$raw]: raw,
@@ -166,6 +167,7 @@ export const schema = <
          return schema(
             {
                ...this,
+               [$raw]: raw,
                [$optional]: true,
             },
             kind
@@ -174,25 +176,6 @@ export const schema = <
       coerce: function (value: unknown) {
          if (s.coerce) return s.coerce(value);
          return value;
-      },
-      validate: function (value: unknown, opts: ValidationOptions = {}) {
-         if (isBoolean(raw)) {
-            return raw === false ? error(opts, "", "Always fails") : valid();
-         }
-
-         const result = validate(s, value, opts);
-         // @ts-ignore
-         if ("validate" in s) {
-            console.log("--- customValidate", s.validate);
-            const custom = s.validate(value, opts);
-            if (!custom.valid) {
-               result.errors.push(...custom.errors);
-            }
-         }
-         return {
-            valid: result.valid,
-            errors: result.errors,
-         };
       },
       template: function (opts: TSchemaTemplateOptions = {}) {
          if (s.default !== undefined) return s.default;
@@ -205,7 +188,18 @@ export const schema = <
          if (isBoolean(raw)) return raw;
          return JSON.parse(JSON.stringify(s));
       },
-   } as any;
+   };
+
+   // important to split here, to get all schema methods (required for isSchema check)
+   s2.validate = function (value: unknown, opts: ValidationOptions = {}) {
+      if (isBoolean(raw)) {
+         return raw === false ? error(opts, "", "Always fails") : valid();
+      }
+
+      return validate(s2 as any, value, opts);
+   };
+
+   return s2 as any;
 };
 
 export const any = <O extends TSchema>(

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { fromSchema } from "./from-schema";
 import type { TSchema } from "../schema";
-import { $kind, $optional } from "../symbols";
+import { $kind, $optional, $raw } from "../symbols";
 
 const expectType = (
    schema: TSchema,
@@ -216,6 +216,20 @@ describe("fromSchema", () => {
          expect(s.anyOf?.[0]?.[$kind]).toEqual("any");
          expect(s.oneOf?.[0]?.multipleOf).toEqual(5);
          expect(s.oneOf?.[0]?.[$kind]).toEqual("any");
+      }
+
+      {
+         expect(fromSchema(true)[$raw]).toBe(true);
+         expect(fromSchema(false)[$raw]).toBe(false);
+         const s = fromSchema({
+            $schema: "https://json-schema.org/draft/2020-12/schema",
+            properties: {
+               foo: true,
+               bar: false,
+            },
+         });
+         expect(s.properties?.foo?.[$raw]).toBe(true);
+         expect(s.properties?.bar?.[$raw]).toBe(false);
       }
    });
 });

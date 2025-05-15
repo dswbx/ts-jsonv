@@ -50,9 +50,6 @@ const skips: SkipFn[] = [
          "float-overflow",
       ].some((k) => file.includes(k) || recurisvelyHasKeys(schema, [k])),
 
-   // skip array-types
-   //({ schema }) => isObject(schema) && "type" in schema && isArray(schema.type),
-
    // skip specific tests
    ({ test }) =>
       (test &&
@@ -62,7 +59,8 @@ const skips: SkipFn[] = [
       false,
 ];
 
-const abort_early = false;
+const abort_early = true;
+const abort_early_optional = false;
 const explain = false;
 
 for (const testSuite of tests) {
@@ -133,7 +131,8 @@ for (const testSuite of tests) {
                   stats.failed++;
                }
 
-               if (abort_early) {
+               const abort = isOptional ? abort_early_optional : abort_early;
+               if (abort) {
                   printStats();
                   if (e instanceof Error) {
                      throw e;

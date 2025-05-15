@@ -20,4 +20,4 @@ export { array } from "./array/array";
 export { boolean } from "./boolean/boolean";
 export { anyOf, oneOf } from "./union/union";
 export { fromSchema } from "./schema/from-schema";
-export { ref, type TRef } from "./ref/ref";
+export { ref, type TRef, refId, type TRefId } from "./ref/ref";

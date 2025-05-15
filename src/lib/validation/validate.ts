@@ -100,7 +100,7 @@ export function validate(
    _value: unknown,
    opts: ValidationOptions = {}
 ): ValidationResult {
-   console.log("---validate", s);
+   //console.log("---validate", s);
    const value = opts?.coerce ? s.coerce(_value) : _value;
    const ctx: CtxValidationOptions = {
       keywordPath: opts.keywordPath || [],
@@ -133,6 +133,7 @@ export function validate(
          // get ref from root
          refSchema = getJsonPath(ctx.root, ref);
          if (!isSchema(refSchema)) {
+            //console.log("--root", { root: ctx.root, refSchema });
             throw new Error(`ref not found: ${ref}`);
          }
          ctx.cache.set(ref, refSchema);
@@ -165,6 +166,6 @@ export function validate(
       valid: ctx.errors.length === 0,
       errors: ctx.errors,
       // @ts-ignore
-      $refs: Object.fromEntries(ctx.cache.entries()),
+      //$refs: Object.fromEntries(ctx.cache.entries()),
    };
 }

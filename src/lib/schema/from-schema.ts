@@ -112,6 +112,6 @@ export function fromSchema<Type = unknown>(_schema: any): lib.TSchema<Type> {
       }
    }
 
-   console.log("--fallback", { schema });
+   //console.log("--fallback", { schema });
    return lib.schema(schema as any);
 }
