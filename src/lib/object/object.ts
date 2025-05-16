@@ -1,10 +1,8 @@
 import {
    type TSchema,
-   type TOptional,
    type TSchemaTemplateOptions,
    schema,
    type TCustomSchema,
-   type TAnySchema,
 } from "../schema";
 import type {
    OptionalUndefined,
@@ -14,6 +12,7 @@ import type {
 } from "../static";
 import { $optional } from "../symbols";
 import { invariant, isSchema, isValidPropertyName } from "../utils";
+import type { CoercionOptions } from "../validation/coerse";
 
 export type PropertyName = string;
 export type TProperties = { [key in PropertyName]: TSchema };
@@ -117,23 +116,20 @@ export const partialObject = <
       ])
    );
 
-   return object(partial, {
-      ...options,
-      additionalProperties: schema(false),
-   }) as any;
+   return object(partial, options) as any;
 };
 
 type RecordStatic<T extends TProperties> = Record<string, Static<TObject<T>>>;
 
 export interface RecordSchema extends Partial<TSchema> {
-   additionalProperties: TSchema;
+   additionalProperties: never;
 }
 
-type TRecord<P extends TProperties, O extends RecordSchema> = Omit<
+export type TRecord<P extends TProperties, O extends RecordSchema> = Omit<
    TCustomSchema<O, RecordStatic<P>>,
    "additionalProperties"
 > & {
-   additionalProperties: P;
+   additionalProperties: TObject<P>;
 };
 
 export const record = <P extends TProperties, const O extends RecordSchema>(
@@ -154,19 +150,10 @@ export const record = <P extends TProperties, const O extends RecordSchema>(
 };
 
 function template(this: TSchema, opts: TSchemaTemplateOptions = {}) {
-   if (this.default) return this.default;
-   if (this.const) return this.const;
-
    const result: Record<string, unknown> = {};
-   const properties = {
-      ...this.properties,
-      ...(typeof this.additionalProperties === "object"
-         ? this.additionalProperties.properties
-         : {}),
-   };
 
-   if (properties) {
-      for (const [key, property] of Object.entries(properties)) {
+   if (this.properties) {
+      for (const [key, property] of Object.entries(this.properties)) {
          if (opts.withOptional !== true && !this.required?.includes(key)) {
             continue;
          }
@@ -181,26 +168,19 @@ function template(this: TSchema, opts: TSchemaTemplateOptions = {}) {
    return result;
 }
 
-function coerce(this: TSchema, _value: unknown) {
+function coerce(this: TSchema, _value: unknown, opts: CoercionOptions = {}) {
    const value = typeof _value === "string" ? JSON.parse(_value) : _value;
 
    if (typeof value !== "object" || value === null) {
       return undefined;
    }
 
-   const properties = {
-      ...this.properties,
-      ...(typeof this.additionalProperties === "object"
-         ? this.additionalProperties.properties
-         : {}),
-   };
-
-   if (properties) {
-      for (const [key, property] of Object.entries(properties)) {
+   if (this.properties) {
+      for (const [key, property] of Object.entries(this.properties)) {
          const v = value[key];
          if (v !== undefined) {
             // @ts-ignore
-            value[key] = property.coerce(v);
+            value[key] = property.coerce(v, opts);
          }
       }
    }

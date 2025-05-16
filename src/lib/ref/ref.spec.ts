@@ -3,7 +3,7 @@ import { type Static, type StaticCoersed } from "../static";
 import { ref, refId } from "./ref";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, object, anyOf } from "../";
+import { string, number, object, anyOf, partialObject } from "../";
 import { $kind } from "../symbols";
 
 describe("ref", () => {
@@ -14,9 +14,9 @@ describe("ref", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<string>();
 
       expect<any>(schema[$kind]).toEqual("ref");
-      expect<any>(schema.$ref).toEqual("#/$defs/string");
+      expect<any>(schema.$ref).toEqual("string");
       assertJson(schema, {
-         $ref: "#/$defs/string",
+         $ref: "string",
       });
    });
 
@@ -26,8 +26,8 @@ describe("ref", () => {
    });
 
    test("prefix", () => {
-      const schema = ref(string({ $id: "string" }), "definitions");
-      expect(schema.$ref).toEqual("#/definitions/string");
+      const schema = ref(string({ $id: "string" }), "#$defs/somewhereelse");
+      expect(schema.$ref).toEqual("#$defs/somewhereelse");
    });
 
    test("refId", () => {
@@ -35,13 +35,13 @@ describe("ref", () => {
       expect(s.$ref).toEqual("#/$defs/string");
       expectTypeOf<(typeof s)["$ref"]>().toEqualTypeOf<"#/$defs/string">();
       const s2 = refId("string");
-      expectTypeOf<(typeof s2)["$ref"]>().toEqualTypeOf<"#/$defs/string">();
-      expect(s2.$ref).toEqual("#/$defs/string");
+      expectTypeOf<(typeof s2)["$ref"]>().toEqualTypeOf<"string">();
+      expect(s2.$ref).toEqual("string");
 
       const s3 = refId<{ foo: 1 }>("whatever");
-      expectTypeOf<(typeof s3)["$ref"]>().toEqualTypeOf<`#/$defs/${string}`>();
+      expectTypeOf<(typeof s3)["$ref"]>().toEqualTypeOf<string>();
       expectTypeOf<Static<typeof s3>>().toEqualTypeOf<{ foo: 1 }>();
-      expect(s3.$ref).toEqual("#/$defs/whatever");
+      expect(s3.$ref).toEqual("whatever");
    });
 
    test("rec with coerce", () => {
@@ -49,10 +49,9 @@ describe("ref", () => {
          coerce: Number,
          $id: "numberOrString",
       });
-      const sRef = ref(s);
       const query = object(
          {
-            limit: sRef,
+            limit: ref(s, "#/$defs/numberOrString"),
             offset: number(),
          },
          {
@@ -84,6 +83,63 @@ describe("ref", () => {
             offset: { type: "number" },
          },
          required: ["limit", "offset"],
+      });
+   });
+
+   test("rec", () => {
+      const schema = partialObject(
+         {
+            limit: number(),
+            with: refId("schema"),
+         },
+         {
+            $id: "schema",
+         }
+      );
+
+      expect(schema.toJSON()).toEqual({
+         $id: "schema",
+         type: "object",
+         properties: {
+            limit: {
+               type: "number",
+            },
+            with: {
+               $ref: "schema",
+            },
+         },
+      });
+
+      expect(
+         schema.validate(
+            {
+               limit: 1,
+               with: {
+                  limit: "1",
+               },
+            },
+            {
+               ignoreUnsupported: true,
+            }
+         )
+      ).toEqual({
+         valid: false,
+         errors: [
+            {
+               keywordLocation: "/properties/with/properties/limit/type",
+               instanceLocation: "/with/limit",
+               error: "Expected number",
+               data: "1",
+            },
+         ],
+      });
+
+      expect(schema.coerce({ limit: "1" })).toEqual({ limit: 1 });
+      expect(schema.coerce({ limit: "1", with: { limit: "1" } })).toEqual({
+         limit: 1,
+         with: {
+            limit: 1,
+         },
       });
    });
 });

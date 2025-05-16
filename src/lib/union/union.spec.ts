@@ -4,7 +4,7 @@ import { $kind } from "../symbols";
 import { allOf, anyOf, oneOf } from "./union";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, object, array } from "../";
+import { string, number, object, array, any, integer } from "../";
 
 describe("union", () => {
    test("anyOf", () => {
@@ -92,6 +92,14 @@ describe("union", () => {
    test("template", () => {
       const schema = anyOf([string(), number()], { default: 1 });
       expect(schema.template()).toEqual(1);
+   });
+
+   test("validation", () => {
+      const schema = anyOf([integer(), any({ minimum: 2 })]);
+      expect(schema.validate(1).valid).toEqual(true);
+      expect(schema.validate(2.5).valid).toEqual(true);
+      expect(schema.validate(3).valid).toEqual(true);
+      expect(schema.validate(1.5).valid).toEqual(false);
    });
 
    test("coerce", () => {

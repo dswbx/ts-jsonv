@@ -99,6 +99,8 @@ describe("number", () => {
          expect(schema.validate([]).errors[0]?.error).toEqual(
             "Expected number"
          );
+
+         expect(integer().validate(1.5).valid).toEqual(false);
       });
 
       test("const", () => {

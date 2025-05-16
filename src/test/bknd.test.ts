@@ -103,7 +103,6 @@ describe("Field", () => {
       }>();
 
       assertJson(schema, {
-         additionalProperties: false,
          type: "object",
          properties: {
             default_value: { type: "number" },

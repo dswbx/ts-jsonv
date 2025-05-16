@@ -5,6 +5,7 @@ import { boolean } from "../boolean/boolean";
 import { string } from "../string/string";
 import { schema, any } from "../schema";
 import { fromSchema } from "../schema/from-schema";
+import { object, partialObject } from "../object/object";
 
 describe("keywords", () => {
    describe("base", () => {
@@ -160,9 +161,21 @@ describe("keywords", () => {
 
    describe("object", () => {
       test("properties", () => {
-         expect(
-            kw.properties(any({ properties: { a: number() } }), { a: 1 }).valid
-         ).toBe(true);
+         {
+            const result = kw.properties(any({ properties: { a: number() } }), {
+               a: 1,
+            });
+            expect(result.valid).toBe(true);
+            expect(result.errors).toEqual([]);
+         }
+         {
+            const result = kw.properties(partialObject({ a: number() }), {
+               a: "1",
+            });
+            expect(result.valid).toBe(false);
+            expect(result.errors).toHaveLength(1);
+         }
+
          expect(
             kw.properties(any({ properties: { a: number() } }), { a: 1, b: 2 })
                .valid
@@ -215,51 +228,6 @@ describe("keywords", () => {
          expect(
             kw.maxProperties(any({ maxProperties: 2 }), "not an object").valid
          ).toBe(true);
-      });
-
-      test("additionalProperties", () => {
-         /* expect(
-            kw.additionalProperties(any({ additionalProperties: true }), {
-               a: 1,
-            }).valid
-         ).toBe(true); */
-         /* console.log(
-            JSON.stringify(
-               fromSchema({
-                  allOf: [
-                     {
-                        properties: {
-                           foo: {},
-                        },
-                     },
-                  ],
-                  additionalProperties: {
-                     type: "boolean",
-                  },
-               }),
-               null,
-               2
-            )
-         ); */
-         // @todo: add test
-         /* console.log(
-            kw.additionalProperties(
-               fromSchema({
-                  allOf: [
-                     {
-                        properties: {
-                           foo: {},
-                        },
-                     },
-                  ],
-                  additionalProperties: {
-                     type: "boolean",
-                  },
-               }),
-               //{ a: 1, foo: true }
-               { foo: 1, bar: true }
-            )
-         ); */
       });
 
       test("patternProperties", () => {
@@ -441,21 +409,19 @@ describe("keywords", () => {
       });
    });
 
-   describe("dependentRequired", () => {
-      test("dependentRequired", () => {
-         const s = fromSchema({
-            dependentRequired: {
-               bar: ["foo"],
-            },
-         });
-
-         expect(s.validate({}).valid).toBe(true);
-         expect(s.validate({ bar: 2 }).valid).toBe(false);
+   test("dependentRequired", () => {
+      const s = fromSchema({
+         dependentRequired: {
+            bar: ["foo"],
+         },
       });
+
+      expect(s.validate({}).valid).toBe(true);
+      expect(s.validate({ bar: 2 }).valid).toBe(false);
    });
 
-   describe("ifThenElse", () => {
-      test("ifThenElse", () => {
+   test("ifThenElse", () => {
+      {
          const s = fromSchema({
             if: {
                exclusiveMaximum: 0,
@@ -468,27 +434,40 @@ describe("keywords", () => {
          expect(s.validate(-1).valid).toBe(true);
          expect(s.validate(-100).valid).toBe(false);
          expect(s.validate(3).valid).toBe(true);
-      });
-   });
+      }
 
-   describe("dependentSchemas", () => {
-      test("dependentSchemas", () => {
+      {
          const s = fromSchema({
-            $schema: "https://json-schema.org/draft/2020-12/schema",
-            dependentSchemas: {
-               bar: {
-                  properties: {
-                     foo: { type: "integer" },
-                     bar: { type: "integer" },
-                  },
-               },
+            if: {
+               exclusiveMaximum: 0,
+            },
+            else: {
+               multipleOf: 2,
             },
          });
 
-         expect(s.validate({ foo: 1, bar: 2 }).valid).toBe(true);
-         expect(s.validate({ foo: "quux" }).valid).toBe(true);
-         expect(s.validate({ foo: "quux", bar: 2 }).valid).toBe(false);
-         expect(s.validate({ foo: 2, bar: "quux" }).valid).toBe(false);
+         expect(s.validate(-1).valid).toBe(true);
+         expect(s.validate(4).valid).toBe(true);
+         expect(s.validate(3).valid).toBe(false);
+      }
+   });
+
+   test("dependentSchemas", () => {
+      const s = fromSchema({
+         $schema: "https://json-schema.org/draft/2020-12/schema",
+         dependentSchemas: {
+            bar: {
+               properties: {
+                  foo: { type: "integer" },
+                  bar: { type: "integer" },
+               },
+            },
+         },
       });
+
+      expect(s.validate({ foo: 1, bar: 2 }).valid).toBe(true);
+      expect(s.validate({ foo: "quux" }).valid).toBe(true);
+      expect(s.validate({ foo: "quux", bar: 2 }).valid).toBe(false);
+      expect(s.validate({ foo: 2, bar: "quux" }).valid).toBe(false);
    });
 });

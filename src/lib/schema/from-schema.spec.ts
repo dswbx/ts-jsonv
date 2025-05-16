@@ -52,8 +52,13 @@ describe("fromSchema", () => {
             exclusiveMinimum: 1,
          }
       );
+      //console.log(fromSchema({ anyOf: [{ type: "integer" }, { minimum: 2 }] }));
       expectType(fromSchema({ type: "integer" }), "integer");
       expectType(fromSchema({ type: "boolean" }), "boolean");
+   });
+
+   test("any", () => {
+      expect(fromSchema({ minimum: 2 }).minimum).toEqual(2);
    });
 
    test("objects", () => {

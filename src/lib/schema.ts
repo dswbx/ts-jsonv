@@ -1,11 +1,5 @@
 import { $kind, $optional, $raw } from "./symbols";
-import type {
-   Merge,
-   Simplify,
-   Static,
-   StaticCoersed,
-   StaticConstEnum,
-} from "./static";
+import type { Static, StaticCoersed, StaticConstEnum } from "./static";
 import { isBoolean, isObject } from "./utils";
 import { validate } from "./validation/validate";
 import type {
@@ -13,6 +7,8 @@ import type {
    ValidationOptions,
 } from "./validation/validate";
 import { error, valid } from "./utils/details";
+import { type CoercionOptions } from "./validation/coerse";
+import { Resolver } from "./validation/resolver";
 
 export type PropertyName = string;
 export type JSONSchemaTypeName =
@@ -31,7 +27,7 @@ export type TSchemaTemplateOptions = {
 export interface TSchemaFn {
    validate: (value: unknown, opts?: ValidationOptions) => ValidationResult;
    template: (opts?: TSchemaTemplateOptions) => unknown;
-   coerce: (value: unknown) => unknown;
+   coerce: (value: unknown, opts?: CoercionOptions) => unknown;
    toJSON: () => object;
 }
 
@@ -115,7 +111,7 @@ export interface TSchemaBase {
 
 export interface TSchema<Type = unknown> extends TSchemaBase, TSchemaFn {
    optional: () => TOptional<this>;
-   coerce: (value: unknown) => Type;
+   coerce: (value: unknown, opts?: CoercionOptions) => Type;
    static: Type;
    [$kind]: string;
    [$raw]: any;
@@ -173,19 +169,19 @@ export const schema = <
          return schema(
             {
                ...this,
+               // prevent treating schema validate as custom validate
+               validate: undefined,
                [$raw]: raw,
                [$optional]: true,
             },
             kind
          );
       },
-      coerce: function (value: unknown) {
-         if (s.coerce) return s.coerce(value);
-         return value;
-      },
       template: function (opts: TSchemaTemplateOptions = {}) {
-         if (s.default !== undefined) return s.default;
+         // @todo: handle optional here?
          if (s.const !== undefined) return s.const;
+         if (s.default !== undefined) return s.default;
+         if (s.enum !== undefined) return s.enum[0];
          if (s.template) return s.template(opts);
          return undefined;
       },
@@ -196,6 +192,20 @@ export const schema = <
       },
    };
 
+   //
+   s2.coerce = function (value: unknown, opts: CoercionOptions = {}) {
+      const ctx: Required<CoercionOptions> = {
+         resolver: opts.resolver || new Resolver(s2 as any),
+      };
+
+      if ("coerce" in s && s.coerce !== undefined) {
+         return s.coerce(value, ctx);
+      }
+
+      // @todo: what about default, const, enum?
+      return value;
+   };
+
    // important to split here, to get all schema methods (required for isSchema check)
    s2.validate = function (value: unknown, opts: ValidationOptions = {}) {
       if (isBoolean(raw)) {
@@ -204,7 +214,7 @@ export const schema = <
 
       // run custom validate if present
       let errors = opts.errors || [];
-      if ("validate" in s) {
+      if ("validate" in s && s.validate !== undefined) {
          const result = s.validate(value, opts);
          if (!result.valid) {
             errors = [...errors, ...result.errors];

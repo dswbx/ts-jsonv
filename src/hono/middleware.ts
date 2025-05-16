@@ -41,7 +41,7 @@ export const validator = <
       : StaticCoersed<Schema>,
    I extends Input = {
       in: { [K in Target]: Static<Schema> };
-      out: { [K in Target]: StaticCoersed<Schema> };
+      out: { [K in Target]: Out };
    }
 >(
    target: Target,

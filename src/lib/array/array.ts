@@ -6,6 +6,7 @@ import {
 } from "../schema";
 import type { Static, StaticCoersed } from "../static";
 import { isSchema, invariant, isBoolean } from "../utils";
+import type { CoercionOptions } from "../validation/coerse";
 
 type ArrayStatic<T extends TAnySchema> = Static<T>[] & {};
 type ArrayCoerced<T extends TAnySchema> = StaticCoersed<T>[] & {};
@@ -20,10 +21,10 @@ export interface ArraySchema extends Omit<Partial<TSchema>, "items"> {
    minItems?: number;
 }
 
-type TArray<Items extends TSchema, O extends ArraySchema> = TCustomSchema<
-   O,
-   ArrayStatic<Items>
-> & {
+export type TArray<
+   Items extends TSchema,
+   O extends ArraySchema
+> = TCustomSchema<O, ArrayStatic<Items>> & {
    items: Items;
    coerce: (value: unknown) => ArrayCoerced<Items>;
 };
@@ -50,7 +51,8 @@ export const array = <const Items extends TSchema, const O extends ArraySchema>(
 
 function coerce(
    this: ArraySchema & { items: TAnySchema | boolean },
-   _value: unknown
+   _value: unknown,
+   opts: CoercionOptions
 ) {
    const value = typeof _value === "string" ? JSON.parse(_value) : _value;
    if (!Array.isArray(value)) {
@@ -60,7 +62,7 @@ function coerce(
    if (!isBoolean(this.items)) {
       for (const [index, item] of value.entries()) {
          // @ts-ignore
-         value[index] = this.items.coerce(item);
+         value[index] = this.items.coerce(item, opts);
       }
    }
 

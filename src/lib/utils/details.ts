@@ -64,3 +64,10 @@ export const makeOpts = (
          : opts.instancePath,
    };
 };
+
+export const tmpOpts = (opts: ValidationOptions = {}) => {
+   return {
+      ...opts,
+      errors: [],
+   };
+};

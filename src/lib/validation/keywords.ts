@@ -12,7 +12,7 @@ import {
    isString,
    normalize,
 } from "../utils";
-import { error, makeOpts, valid } from "../utils/details";
+import { error, makeOpts, tmpOpts, valid } from "../utils/details";
 import type { ValidationOptions } from "./validate";
 
 export type KeywordResult = string | boolean;
@@ -79,9 +79,13 @@ export const _enum = (
    return valid();
 };
 
-function matches<T extends TSchema[]>(schemas: T, value: unknown): TSchema[] {
+function matches<T extends TSchema[]>(
+   schemas: T,
+   value: unknown,
+   opts: Opts = {}
+): TSchema[] {
    return schemas
-      .map((s) => (s.validate(value).valid ? s : undefined))
+      .map((s) => (s.validate(value, tmpOpts(opts)).valid ? s : undefined))
       .filter(Boolean) as TSchema[];
 }
 
@@ -90,7 +94,7 @@ export const anyOf = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (matches(anyOf, value).length > 0) return valid();
+   if (matches(anyOf, value, opts).length > 0) return valid();
    return error(opts, "anyOf", "Expected at least one to match", value);
 };
 
@@ -108,12 +112,12 @@ export const allOf = (
    value: unknown,
    opts: Opts = {}
 ) => {
-   if (matches(allOf, value).length === allOf.length) return valid();
+   if (matches(allOf, value, opts).length === allOf.length) return valid();
    return error(opts, "allOf", "Expected all to match", value);
 };
 
 export const not = ({ not }: TSchema, value: unknown, opts: Opts = {}) => {
-   if (isSchema(not) && not.validate(value).valid) {
+   if (isSchema(not) && not.validate(value, opts).valid) {
       return error(opts, "not", "Expected not to match", value);
    }
    return valid();
@@ -125,14 +129,13 @@ export const ifThenElse = (
    opts: Opts = {}
 ) => {
    if (_if && (_then || _else)) {
-      const result = _if.validate(value);
-      if (result.valid) {
+      if (_if.validate(value, tmpOpts(opts)).valid) {
          if (_then) {
-            return _then.validate(value, opts);
+            return _then.validate(value, tmpOpts(opts));
          }
          return valid();
       } else if (_else) {
-         return _else.validate(value, opts);
+         return _else.validate(value, tmpOpts(opts));
       }
    }
    return valid();

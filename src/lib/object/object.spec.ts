@@ -4,7 +4,7 @@ import { object, partialObject, record, strictObject } from "./object";
 import { any, type TSchema } from "../schema";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, boolean, array } from "../";
+import { string, number, boolean, array, anyOf } from "../";
 import { $kind } from "../symbols";
 
 describe("object", () => {
@@ -75,7 +75,6 @@ describe("object", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<{ name?: string; age?: number }>();
 
       assertJson(schema, {
-         additionalProperties: false,
          type: "object",
          properties: {
             name: { type: "string" },
@@ -154,6 +153,24 @@ describe("object", () => {
             required: ["name"],
          },
       });
+
+      {
+         // in union
+         const schema = anyOf([
+            record({
+               name: string(),
+               age: number().optional(),
+            }),
+            string(),
+         ]);
+         type Inferred = Static<typeof schema>;
+         expectTypeOf<Inferred>().toEqualTypeOf<
+            | {
+                 [key: string]: { name: string; age?: number };
+              }
+            | string
+         >();
+      }
    });
 
    test("partialObject", () => {
@@ -166,7 +183,6 @@ describe("object", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{ name?: string; age?: number }>();
       assertJson(schema, {
-         additionalProperties: false,
          type: "object",
          properties: {
             name: { type: "string" },
@@ -268,6 +284,24 @@ describe("object", () => {
             surname: string().optional(),
          });
          expect(schema.template()).toEqual({ name: "" });
+         expect(schema.template({ withOptional: true })).toEqual({
+            name: "",
+            surname: "",
+         });
+
+         // object in object
+         {
+            const schema = object({
+               nested: object({
+                  name: string().optional(),
+               }).optional(),
+            });
+            expect(schema.template({ withOptional: true })).toEqual({
+               nested: {
+                  name: "",
+               },
+            });
+         }
       });
    });
 

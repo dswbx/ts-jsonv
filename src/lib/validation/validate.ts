@@ -1,5 +1,5 @@
 import type { TSchema } from "../schema";
-import { error, valid, type ErrorDetail } from "../utils/details";
+import type { ErrorDetail } from "../utils/details";
 import {
    _type,
    _const,
@@ -34,8 +34,7 @@ import {
    ifThenElse,
 } from "./keywords";
 import { format } from "./format";
-import { isSchema, isString } from "../utils";
-import { getJsonPath } from "../utils/path";
+import { Resolver } from "./resolver";
 
 type TKeywordFn = (
    schema: TSchema,
@@ -85,8 +84,7 @@ export type ValidationOptions = {
    errors?: ErrorDetail[];
    shortCircuit?: boolean;
    ignoreUnsupported?: boolean;
-   cache?: Map<string, TSchema>;
-   root?: TSchema;
+   resolver?: Resolver;
 };
 type CtxValidationOptions = Required<ValidationOptions>;
 
@@ -100,7 +98,7 @@ export function validate(
    _value: unknown,
    opts: ValidationOptions = {}
 ): ValidationResult {
-   //console.log("---validate", s);
+   //console.log("---validate", opts);
    const value = opts?.coerce ? s.coerce(_value) : _value;
    const ctx: CtxValidationOptions = {
       keywordPath: opts.keywordPath || [],
@@ -109,8 +107,7 @@ export function validate(
       errors: opts.errors || [],
       shortCircuit: opts.shortCircuit || false,
       ignoreUnsupported: opts.ignoreUnsupported || false,
-      root: opts.root || s,
-      cache: opts.cache || new Map<string, TSchema>(),
+      resolver: opts.resolver || new Resolver(s),
    };
 
    if (opts.ignoreUnsupported !== true) {
@@ -126,24 +123,12 @@ export function validate(
    }
 
    // check $ref
-   if (value !== undefined && "$ref" in s && isString(s.$ref)) {
-      const ref = s.$ref;
-      let refSchema = ctx.cache.get(ref);
-      if (!refSchema) {
-         // get ref from root
-         refSchema = getJsonPath(ctx.root, ref);
-         if (!isSchema(refSchema)) {
-            //console.log("--root", { root: ctx.root, refSchema });
-            throw new Error(`ref not found: ${ref}`);
-         }
-         ctx.cache.set(ref, refSchema);
-      }
-      const result = refSchema.validate(value, {
+   if (ctx.resolver.hasRef(s, value)) {
+      const result = ctx.resolver.resolve(s.$ref).validate(value, {
          ...ctx,
          errors: [],
       });
       if (!result.valid) {
-         // @todo: leads to duplicate errors
          ctx.errors.push(...result.errors);
       }
    } else {
