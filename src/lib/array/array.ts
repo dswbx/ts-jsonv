@@ -30,7 +30,7 @@ export type TArray<
 };
 
 export const array = <const Items extends TSchema, const O extends ArraySchema>(
-   items: Items,
+   items?: Items,
    options: O = {} as O
 ): TArray<Items, O> => {
    if (items !== undefined) {

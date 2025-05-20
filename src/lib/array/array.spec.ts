@@ -3,7 +3,7 @@ import type { Static, StaticCoersed } from "../static";
 import { array } from "./array";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, object } from "../";
+import { string, number, object, any } from "../";
 
 describe("array", () => {
    test("basic with string", () => {
@@ -11,16 +11,22 @@ describe("array", () => {
          const schema = array(string());
          type Inferred = Static<typeof schema>;
          expectTypeOf<Inferred>().toEqualTypeOf<string[]>();
+         type Coerced = StaticCoersed<typeof schema>;
+         expectTypeOf<Coerced>().toEqualTypeOf<string[]>();
       }
       {
          const schema = array(string({ const: "hello" }));
          type Inferred = Static<typeof schema>;
          expectTypeOf<Inferred>().toEqualTypeOf<"hello"[]>();
+         type Coerced = StaticCoersed<typeof schema>;
+         expectTypeOf<Coerced>().toEqualTypeOf<"hello"[]>();
       }
       {
          const schema = array(string({ enum: ["hello", "world"] }));
          type Inferred = Static<typeof schema>;
          expectTypeOf<Inferred>().toEqualTypeOf<("hello" | "world")[]>();
+         type Coerced = StaticCoersed<typeof schema>;
+         expectTypeOf<Coerced>().toEqualTypeOf<("hello" | "world")[]>();
       }
 
       assertJson(array(string()), {
@@ -34,16 +40,22 @@ describe("array", () => {
          const schema = array(number());
          type Inferred = Static<typeof schema>;
          expectTypeOf<Inferred>().toEqualTypeOf<number[]>();
+         type Coerced = StaticCoersed<typeof schema>;
+         expectTypeOf<Coerced>().toEqualTypeOf<number[]>();
       }
       {
          const schema = array(number({ const: 1 }));
          type Inferred = Static<typeof schema>;
          expectTypeOf<Inferred>().toEqualTypeOf<1[]>();
+         type Coerced = StaticCoersed<typeof schema>;
+         expectTypeOf<Coerced>().toEqualTypeOf<1[]>();
       }
       {
          const schema = array(number({ enum: [1, 2, 3] }));
          type Inferred = Static<typeof schema>;
          expectTypeOf<Inferred>().toEqualTypeOf<(1 | 2 | 3)[]>();
+         type Coerced = StaticCoersed<typeof schema>;
+         expectTypeOf<Coerced>().toEqualTypeOf<(1 | 2 | 3)[]>();
       }
 
       assertJson(array(number()), {
@@ -81,6 +93,29 @@ describe("array", () => {
          items: { type: "string" },
          contains: { type: "string" },
       });
+   });
+
+   describe("empty array", () => {
+      const s = array();
+      type Inferred = Static<typeof s>;
+      expectTypeOf<Inferred>().toEqualTypeOf<unknown[]>();
+      type Coerced = StaticCoersed<typeof s>;
+      expectTypeOf<Coerced>().toEqualTypeOf<unknown[]>();
+
+      assertJson(s, {
+         type: "array",
+      });
+
+      {
+         // specific coercion
+         const s2 = array(undefined, {
+            coerce: () => [] as number[],
+         });
+         type Inferred2 = Static<typeof s2>;
+         expectTypeOf<Inferred2>().toEqualTypeOf<unknown[]>();
+         type Coerced2 = StaticCoersed<typeof s2>;
+         expectTypeOf<Coerced2>().toEqualTypeOf<number[]>();
+      }
    });
 
    describe("validate", () => {

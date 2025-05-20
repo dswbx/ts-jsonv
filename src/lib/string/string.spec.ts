@@ -42,6 +42,9 @@ describe("string", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<"hello">();
 
+      type Coerced = StaticCoersed<typeof schema>;
+      expectTypeOf<Coerced>().toEqualTypeOf<"hello">();
+
       assertJson(schema, {
          type: "string",
          const: "hello",

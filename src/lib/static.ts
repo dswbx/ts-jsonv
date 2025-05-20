@@ -32,9 +32,9 @@ export type Static<S extends TAnySchema> = S["static"] extends Record<
 export type StaticCoersed<S extends TAnySchema> = S["coerce"] extends (
    v: unknown
 ) => infer R
-   ? S["static"] extends Record<string, unknown>
+   ? R extends { [key: string]: unknown }
       ? Simplify<OptionalUndefined<R>>
-      : Simplify<R>
+      : R
    : never;
 
 export type StaticConstEnum<

@@ -37,7 +37,7 @@ export interface TAnySchema<Type = unknown> {
    static: Type;
    [$kind]: string;
    [$raw]: any;
-   [$optional]?: boolean;
+   [$optional]?: boolean | never;
 }
 
 export interface TOptional<Schema extends TSchema = TSchema> extends TSchema {
@@ -230,8 +230,15 @@ export const schema = <
    return s2 as any;
 };
 
+export type TAny<O extends TSchemaBase = TSchemaBase> = TCustomSchema<
+   O,
+   any
+> & {
+   static: any;
+};
+
 export const any = <O extends TSchema>(
    options: Partial<O> = {} as Partial<O>
-) => {
-   return schema<any, O>(options as O, "any");
+): TAny<O> => {
+   return schema(options as O, "any") as any;
 };

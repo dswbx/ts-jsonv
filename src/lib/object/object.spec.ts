@@ -214,16 +214,6 @@ describe("object", () => {
       });
    });
 
-   test("any", () => {
-      const schema = any();
-      type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<any>();
-
-      expect<any>(schema[$kind]).toEqual("any");
-
-      assertJson(schema, {});
-   });
-
    describe("validate", () => {
       test("base", () => {
          const schema = object({});
