@@ -1,12 +1,9 @@
 import type { TSchema } from "../schema";
 import { getJsonPath } from "../utils/path";
 import { isSchema, isString } from "../utils";
-import { $kind } from "../symbols";
-import crypto from "crypto";
 
 export class Resolver {
    private cache: Map<string, TSchema>;
-   public id = crypto.randomUUID();
 
    constructor(readonly root: TSchema) {
       this.cache = new Map<string, TSchema>();
