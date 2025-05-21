@@ -13,7 +13,7 @@ export class Resolver {
    }
 
    hasRef<S extends TSchema>(s: S, value: unknown): s is S & { $ref: string } {
-      if (s[$kind] === "recursive") return false;
+      //if (s[$kind] === "recursive") return false;
       return value !== undefined && "$ref" in s && isString(s.$ref);
    }
 

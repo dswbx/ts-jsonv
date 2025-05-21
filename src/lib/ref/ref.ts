@@ -54,19 +54,10 @@ export const refId = <const Type = unknown, const Id extends string = string>(
    ) as any;
 };
 
+// @todo: only # refs supported for now
 export const recursive = <const T extends TSchema>(
-   cb: (thisSchema: TSchema) => T,
-   $id
+   cb: (thisSchema: TSchema) => T
 ) => {
-   const { validate, coerce, ...thisType } = cb(
-      schema({ $ref: "#" }, "recursive")
-   );
-
-   return schema(
-      {
-         ...thisType,
-         $ref: $id,
-      },
-      "recursive"
-   ) as any;
+   const { validate, ...thisType } = cb(schema({ $ref: "#" }, "recursive"));
+   return schema(thisType, "recursive") as any;
 };

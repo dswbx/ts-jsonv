@@ -25,14 +25,14 @@
    "scripts": {
       "test:unit": "bun test --bail",
       "types": "tsc --noEmit",
-      "test": "bun types && bun test:unit",
+      "test": "bun types && bun test:unit && bun test:spec",
       "test:spec": "clear && bun run src/test/spec/run.ts",
       "build": "tsup",
       "fetch": "npx giget gh:json-schema-org/JSON-Schema-Test-Suite/tests src/test/spec/lib",
-      "prepublishOnly": "bun run test && bun run build",
-      "release:patch": "bun run prepublishOnly && npm version patch && git push && git push --tags && npm publish --ignore-scripts",
-      "release:minor": "bun run prepublishOnly && npm version minor && git push && git push --tags && npm publish --ignore-scripts",
-      "release:major": "bun run prepublishOnly && npm version major && git push && git push --tags && npm publish --ignore-scripts"
+      "prepublishOnly": "bun run build",
+      "release:patch": "bun run test && npm version patch && git push && git push --tags && npm publish",
+      "release:minor": "bun run test && npm version minor && git push && git push --tags && npm publish",
+      "release:major": "bun run test && npm version major && git push && git push --tags && npm publish"
    },
    "devDependencies": {
       "@cfworker/json-schema": "^4.1.1",

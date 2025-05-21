@@ -156,27 +156,58 @@ describe("ref", () => {
       });
    });
 
-   test.skip("recursive", () => {
-      const s = recursive(
-         (tthis) =>
-            object({
-               id: string(),
-               nodes: array(tthis),
-            }),
-         "node"
+   test("rec...", () => {
+      const s = object({
+         id: string(),
+         nodes: array(),
+      });
+
+      expect(s.coerce({ id: 1 })).toEqual({ id: "1" });
+   });
+
+   test("recursive", () => {
+      const s = recursive((tthis) =>
+         object({
+            id: string(),
+            nodes: array(tthis),
+         })
       );
-      console.log(s);
-      console.log(JSON.stringify(s.toJSON(), null, 2));
-      console.log("template", s.template());
-      console.log("coerce", s.coerce({ id: 1, nodes: [{ id: 2, nodes: [] }] }));
-      console.log(
-         "validate",
+      expect(s.toJSON()).toEqual({
+         type: "object",
+         properties: {
+            id: {
+               type: "string",
+            },
+            nodes: {
+               type: "array",
+               items: {
+                  $ref: "#",
+               },
+            },
+         },
+         required: ["id", "nodes"],
+      });
+      expect(s.coerce({ id: 1, nodes: [{ id: "2", nodes: [] }] })).toEqual({
+         id: "1",
+         nodes: [{ id: "2", nodes: [] }],
+      });
+      expect(
          s.validate(
             { id: "1", nodes: [{ id: 2, nodes: [] }] },
             {
                ignoreUnsupported: true,
             }
          )
-      );
+      ).toEqual({
+         valid: false,
+         errors: [
+            {
+               keywordLocation: "/properties/nodes/items/properties/id/type",
+               instanceLocation: "/nodes/0/id",
+               error: "Expected string",
+               data: 2,
+            },
+         ],
+      });
    });
 });
