@@ -177,7 +177,7 @@ describe("number", () => {
    test("coerce", () => {
       expect(number().coerce("1")).toEqual(1);
       expect(number().coerce(1)).toEqual(1);
-      expect(number().coerce(true)).toEqual(1);
+      expect(number().coerce(true)).toEqual(true);
 
       // custom coersion
       const schema = number({

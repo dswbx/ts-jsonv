@@ -9,6 +9,8 @@ import { schema } from "../schema";
 import { fromSchema } from "../schema/from-schema";
 import type { Merge, Static, StaticCoersed } from "../static";
 import { mergeAllOf } from "../utils/merge-allof";
+import type { CoercionOptions } from "../validation/coerce";
+import { matches } from "../validation/keywords";
 
 type StaticUnion<T extends TAnySchema[]> = T extends [infer U, ...infer Rest]
    ? U extends TAnySchema
@@ -50,6 +52,26 @@ export const anyOf = <
    return schema(
       {
          ...options,
+         coerce: function (
+            this: TAnyOf<T, O>,
+            value: unknown,
+            opts: CoercionOptions = {}
+         ) {
+            if ("coerce" in options && options.coerce !== undefined) {
+               return options.coerce(value, opts);
+            }
+
+            const m = matches(schemas, value, {
+               ignoreUnsupported: true,
+               resolver: opts.resolver,
+               coerce: true,
+            });
+
+            if (m.length > 0) {
+               return m[0]!.coerce(value, opts);
+            }
+            return value;
+         },
          anyOf: schemas,
       },
       "anyOf"
@@ -65,7 +87,7 @@ export type TOneOf<
 };
 
 export const oneOf = <
-   const T extends TAnySchema[],
+   const T extends TSchema[],
    const O extends Omit<TSchema, "oneOf">
 >(
    schemas: T,
@@ -74,6 +96,22 @@ export const oneOf = <
    return schema(
       {
          ...options,
+         coerce: function (
+            this: TOneOf<T, O>,
+            value: unknown,
+            opts: CoercionOptions = {}
+         ) {
+            const m = matches(schemas, value, {
+               ignoreUnsupported: true,
+               resolver: opts.resolver,
+               coerce: true,
+            });
+
+            if (m.length === 1) {
+               return m[0]!.coerce(value, opts);
+            }
+            return value;
+         },
          oneOf: schemas,
       },
       "oneOf"

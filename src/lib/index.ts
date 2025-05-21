@@ -47,4 +47,4 @@ export type {
 } from "./validation/validate";
 export { error, type ErrorDetail, valid, makeOpts } from "./utils/details";
 export { $kind, $raw, $optional } from "./symbols";
-export { type CoercionOptions } from "./validation/coerse";
+export { type CoercionOptions } from "./validation/coerce";

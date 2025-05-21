@@ -1,4 +1,5 @@
 import { schema, type TCustomSchema, type TSchema } from "../schema";
+import { isString } from "../utils";
 
 export interface NumberSchema extends Partial<TSchema> {
    multipleOf?: number;
@@ -15,7 +16,10 @@ export const number = <const S extends NumberSchema>(
 ): TNumber<S> =>
    schema(
       {
-         coerce: (value: unknown) => Number(value),
+         coerce: (value: unknown) => {
+            if (isString(value)) return Number(value);
+            return value;
+         },
          template,
          ...options,
          type: "number",
@@ -28,7 +32,10 @@ export const integer = <const S extends NumberSchema>(
 ): TNumber<S> =>
    schema(
       {
-         coerce: (value: unknown) => Number(value),
+         coerce: (value: unknown) => {
+            if (isString(value)) return Number.parseInt(value);
+            return value;
+         },
          template,
          ...options,
          type: "integer",

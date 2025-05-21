@@ -6,7 +6,7 @@ import {
 } from "../schema";
 import type { Static, StaticCoersed } from "../static";
 import { isSchema, invariant, isBoolean } from "../utils";
-import type { CoercionOptions } from "../validation/coerse";
+import type { CoercionOptions } from "../validation/coerce";
 
 type ArrayStatic<T extends TAnySchema> = Static<T>[] & {};
 type ArrayCoerced<T extends TAnySchema> = StaticCoersed<T>[] & {};

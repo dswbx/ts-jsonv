@@ -35,6 +35,7 @@ import {
 } from "./keywords";
 import { format } from "./format";
 import { Resolver } from "./resolver";
+import { $kind } from "../symbols";
 
 type TKeywordFn = (
    schema: TSchema,
@@ -85,6 +86,7 @@ export type ValidationOptions = {
    shortCircuit?: boolean;
    ignoreUnsupported?: boolean;
    resolver?: Resolver;
+   depth?: number;
 };
 type CtxValidationOptions = Required<ValidationOptions>;
 
@@ -98,8 +100,6 @@ export function validate(
    _value: unknown,
    opts: ValidationOptions = {}
 ): ValidationResult {
-   //console.log("---validate", opts);
-   const value = opts?.coerce ? s.coerce(_value) : _value;
    const ctx: CtxValidationOptions = {
       keywordPath: opts.keywordPath || [],
       instancePath: opts.instancePath || [],
@@ -108,7 +108,16 @@ export function validate(
       shortCircuit: opts.shortCircuit || false,
       ignoreUnsupported: opts.ignoreUnsupported || false,
       resolver: opts.resolver || new Resolver(s),
+      depth: opts.depth ? opts.depth + 1 : 0,
    };
+   const value = structuredClone(
+      opts?.coerce
+         ? s.coerce(_value, {
+              resolver: ctx.resolver,
+              depth: ctx.depth,
+           })
+         : _value
+   );
 
    if (opts.ignoreUnsupported !== true) {
       // @todo: readOnly

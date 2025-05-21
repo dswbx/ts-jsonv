@@ -12,7 +12,7 @@ import type {
 } from "../static";
 import { $optional } from "../symbols";
 import { invariant, isSchema, isValidPropertyName } from "../utils";
-import type { CoercionOptions } from "../validation/coerse";
+import type { CoercionOptions } from "../validation/coerce";
 
 export type PropertyName = string;
 export type TProperties = { [key in PropertyName]: TSchema };

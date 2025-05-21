@@ -7,7 +7,7 @@ import type {
    ValidationOptions,
 } from "./validation/validate";
 import { error, valid } from "./utils/details";
-import { type CoercionOptions } from "./validation/coerse";
+import { coerce, type CoercionOptions } from "./validation/coerce";
 import { Resolver } from "./validation/resolver";
 
 export type PropertyName = string;
@@ -195,7 +195,9 @@ export const schema = <
    //
    s2.coerce = function (value: unknown, opts: CoercionOptions = {}) {
       const ctx: Required<CoercionOptions> = {
+         ...opts,
          resolver: opts.resolver || new Resolver(s2 as any),
+         depth: opts.depth ? opts.depth + 1 : 0,
       };
 
       if ("coerce" in s && s.coerce !== undefined) {
@@ -203,7 +205,7 @@ export const schema = <
       }
 
       // @todo: what about default, const, enum?
-      return value;
+      return coerce(s2 as any, value, ctx);
    };
 
    // important to split here, to get all schema methods (required for isSchema check)

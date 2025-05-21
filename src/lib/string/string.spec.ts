@@ -184,8 +184,8 @@ describe("string", () => {
    test("coerce", () => {
       expect(string().coerce("hello")).toEqual("hello");
       expect(string().coerce(1)).toEqual("1");
-      expect(string().coerce(true)).toEqual("true");
-      expect(string().coerce(false)).toEqual("false");
+      expect(string().coerce(true)).toEqual(true);
+      expect(string().coerce(false)).toEqual(false);
 
       // custom coersion
       expect(

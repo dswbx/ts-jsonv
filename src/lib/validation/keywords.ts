@@ -16,7 +16,7 @@ import { error, makeOpts, tmpOpts, valid } from "../utils/details";
 import type { ValidationOptions } from "./validate";
 
 export type KeywordResult = string | boolean;
-type Opts = Omit<ValidationOptions, "coerce">;
+type Opts = ValidationOptions;
 
 /**
  * Default keywords
@@ -79,7 +79,7 @@ export const _enum = (
    return valid();
 };
 
-function matches<T extends TSchema[]>(
+export function matches<T extends TSchema[]>(
    schemas: T,
    value: unknown,
    opts: Opts = {}

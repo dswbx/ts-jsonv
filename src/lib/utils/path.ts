@@ -23,7 +23,10 @@ export function getJsonPath(
 ): any {
    const path =
       typeof _path === "string" ? fromJsonPointer(_path) : toJsonPointer(_path);
-   return getPath(object, path, defaultValue);
+   //console.log("getJsonPath", { object, _path, path, defaultValue });
+   const result = getPath(object, path, defaultValue);
+   //console.log("getJsonPath result", { result });
+   return result;
 }
 
 export function getPath(

@@ -5,7 +5,7 @@ import {
    schema,
 } from "../schema";
 import { type Static, type StaticCoersed } from "../static";
-import type { CoercionOptions } from "../validation/coerse";
+import type { CoercionOptions } from "../validation/coerce";
 
 export type TRef<T extends TSchema> = TCustomSchema<
    Omit<TSchemaBase, "ref">,
@@ -49,18 +49,24 @@ export const refId = <const Type = unknown, const Id extends string = string>(
    return schema(
       {
          $ref,
-         coerce: function (
-            this: TRefId<Type, Id>,
-            value,
-            opts: CoercionOptions = {}
-         ) {
-            try {
-               return opts.resolver?.resolve(this.$ref).coerce(value, opts);
-            } catch (e) {
-               return value;
-            }
-         },
       },
       "ref"
+   ) as any;
+};
+
+export const recursive = <const T extends TSchema>(
+   cb: (thisSchema: TSchema) => T,
+   $id
+) => {
+   const { validate, coerce, ...thisType } = cb(
+      schema({ $ref: "#" }, "recursive")
+   );
+
+   return schema(
+      {
+         ...thisType,
+         $ref: $id,
+      },
+      "recursive"
    ) as any;
 };

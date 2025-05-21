@@ -1,9 +1,9 @@
 import { expectTypeOf } from "expect-type";
 import { type Static, type StaticCoersed } from "../static";
-import { ref, refId } from "./ref";
+import { recursive, ref, refId } from "./ref";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, object, anyOf, partialObject } from "../";
+import { string, number, object, anyOf, partialObject, array } from "../";
 import { $kind } from "../symbols";
 
 describe("ref", () => {
@@ -141,5 +141,42 @@ describe("ref", () => {
             limit: 1,
          },
       });
+   });
+
+   test("rec within union", () => {
+      const schema = object({
+         limit: number(),
+         with: anyOf([string(), refId("#")]).optional(),
+      });
+      expect(schema.coerce({ limit: 1, with: { limit: "1" } })).toEqual({
+         limit: 1,
+         with: {
+            limit: 1,
+         },
+      });
+   });
+
+   test.skip("recursive", () => {
+      const s = recursive(
+         (tthis) =>
+            object({
+               id: string(),
+               nodes: array(tthis),
+            }),
+         "node"
+      );
+      console.log(s);
+      console.log(JSON.stringify(s.toJSON(), null, 2));
+      console.log("template", s.template());
+      console.log("coerce", s.coerce({ id: 1, nodes: [{ id: 2, nodes: [] }] }));
+      console.log(
+         "validate",
+         s.validate(
+            { id: "1", nodes: [{ id: 2, nodes: [] }] },
+            {
+               ignoreUnsupported: true,
+            }
+         )
+      );
    });
 });
