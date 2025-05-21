@@ -54,17 +54,20 @@ function coerce(
    _value: unknown,
    opts: CoercionOptions
 ) {
-   const value = typeof _value === "string" ? JSON.parse(_value) : _value;
-   if (!Array.isArray(value)) {
-      return undefined;
-   }
-
-   if (!isBoolean(this.items)) {
-      for (const [index, item] of value.entries()) {
-         // @ts-ignore
-         value[index] = this.items.coerce(item, opts);
+   try {
+      const value = typeof _value === "string" ? JSON.parse(_value) : _value;
+      if (!Array.isArray(value)) {
+         return undefined;
       }
-   }
 
-   return value;
+      if (isSchema(this.items)) {
+         for (const [index, item] of value.entries()) {
+            // @ts-ignore
+            value[index] = this.items.coerce(item, opts);
+         }
+      }
+      return value;
+   } catch (e) {}
+
+   return _value;
 }

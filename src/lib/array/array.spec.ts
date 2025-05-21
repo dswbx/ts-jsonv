@@ -154,6 +154,11 @@ describe("array", () => {
 
    test("coerce", () => {
       {
+         // expect nothing to happen, including no error
+         expect(array().coerce("")).toBe("");
+      }
+
+      {
          const schema = array(string());
          expect(schema.coerce("[]")).toEqual([]);
          expect(schema.coerce("[1]")).toEqual(["1"]);
