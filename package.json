@@ -3,7 +3,7 @@
    "main": "dist/lib/index.js",
    "module": "dist/lib/index.js",
    "types": "dist/lib/index.d.ts",
-   "version": "0.1.0",
+   "version": "0.0.6",
    "sideEffects": false,
    "typesVersions": {
       "*": {
@@ -29,7 +29,10 @@
       "test:spec": "clear && bun run src/test/spec/run.ts",
       "build": "tsup",
       "fetch": "npx giget gh:json-schema-org/JSON-Schema-Test-Suite/tests src/test/spec/lib",
-      "prepublishOnly": "bun run test && bun run build"
+      "prepublishOnly": "bun run test && bun run build",
+      "release:patch": "bun run prepublishOnly && npm version patch && git push && git push --tags && npm publish --ignore-scripts",
+      "release:minor": "bun run prepublishOnly && npm version minor && git push && git push --tags && npm publish --ignore-scripts",
+      "release:major": "bun run prepublishOnly && npm version major && git push && git push --tags && npm publish --ignore-scripts"
    },
    "devDependencies": {
       "@cfworker/json-schema": "^4.1.1",
