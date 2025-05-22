@@ -1,5 +1,5 @@
-import type { OpenAPIV3 } from "openapi-types";
 import type { TObject, TSchema } from "../../lib";
+import * as t from "./types";
 
 export function isPlainObject(
    value: unknown
@@ -55,7 +55,7 @@ const honoTargetToRequestBody = {
 export function schemaToSpec(
    obj: TObject<Record<string, TSchema>>,
    target: string
-): Omit<OpenAPIV3.OperationObject, "responses"> {
+): Omit<t.OperationObject, "responses"> {
    const _in = honoTargetToParameterin[target];
    const _requestBody = honoTargetToRequestBody[target];
 

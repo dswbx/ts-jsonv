@@ -5,8 +5,10 @@ import { validator } from "../middleware";
 import * as s from "../../lib";
 
 describe("openapi", () => {
-   test.skip("...", async () => {
+   test("...", async () => {
       const app = new Hono();
+
+      app.get("/", openAPISpecs(app));
 
       app.get(
          "/test/:id",
@@ -23,6 +25,14 @@ describe("openapi", () => {
                   },
                },
             },
+            parameters: [
+               {
+                  name: "id",
+                  in: "path",
+                  required: true,
+                  schema: s.string().toJSON(),
+               },
+            ],
          }),
          validator("query", s.object({ name: s.string() })),
          validator("param", s.object({ id: s.string() })),
@@ -32,8 +42,6 @@ describe("openapi", () => {
             return c.text("hello");
          }
       );
-
-      app.get("/", openAPISpecs(app));
 
       const res = await app.request("/");
       const data = await res.json();

@@ -1,4 +1,4 @@
-import type { OpenAPIV3 } from "openapi-types";
+import type { OpenAPIV3_1 } from "openapi-types";
 import type { Context } from "hono";
 import type { Env, Input, BlankInput } from "hono/types";
 import type {
@@ -6,8 +6,17 @@ import type {
    ServerErrorStatusCode,
 } from "hono/utils/http-status";
 
+export type Document = OpenAPIV3_1.Document;
+export type Info = OpenAPIV3_1.InfoObject;
+export type Server = OpenAPIV3_1.ServerObject;
+export type Paths = OpenAPIV3_1.PathsObject;
+export type Components = OpenAPIV3_1.ComponentsObject;
+export type SecurityRequirement = OpenAPIV3_1.SecurityRequirementObject;
+export type Tag = OpenAPIV3_1.TagObject;
+export type OperationObject = OpenAPIV3_1.OperationObject;
+
 export type DescribeRouteOptions = Omit<
-   OpenAPIV3.OperationObject,
+   OpenAPIV3_1.OperationObject,
    "responses" | "parameters"
 > & {
    /**
@@ -38,18 +47,20 @@ export type DescribeRouteOptions = Omit<
     */
    responses?: {
       [key: string]:
-         | (OpenAPIV3.ResponseObject & {
+         | (OpenAPIV3_1.ResponseObject & {
               content?: {
-                 [key: string]: Omit<OpenAPIV3.MediaTypeObject, "schema"> & {
-                    schema?: OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject;
+                 [key: string]: Omit<OpenAPIV3_1.MediaTypeObject, "schema"> & {
+                    schema?:
+                       | OpenAPIV3_1.ReferenceObject
+                       | OpenAPIV3_1.SchemaObject;
                  };
               };
            })
-         | OpenAPIV3.ReferenceObject;
+         | OpenAPIV3_1.ReferenceObject;
    };
 
    /**
     * Parameters of the request
     */
-   parameters?: OpenAPIV3.ParameterObject[];
+   parameters?: OpenAPIV3_1.ParameterObject[];
 };
