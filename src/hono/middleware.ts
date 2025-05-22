@@ -6,7 +6,7 @@ import type {
    ValidationTargets,
 } from "hono";
 import { validator as honoValidator } from "hono/validator";
-import type { Static, StaticCoersed } from "../lib";
+import type { Static, StaticCoerced } from "../lib";
 import type { TAnySchema } from "../lib/schema";
 
 export type Options = {
@@ -38,7 +38,7 @@ export const validator = <
    Opts extends Options = Options,
    Out = Opts extends { coerce: false }
       ? Static<Schema>
-      : StaticCoersed<Schema>,
+      : StaticCoerced<Schema>,
    I extends Input = {
       in: { [K in Target]: Static<Schema> };
       out: { [K in Target]: Out };

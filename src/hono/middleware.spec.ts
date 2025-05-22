@@ -99,7 +99,7 @@ describe("hono middleware", () => {
          url?: string;
          force: boolean;
       }>();
-      type Coerced = s.StaticCoersed<typeof schema>;
+      type Coerced = s.StaticCoerced<typeof schema>;
       //   ^?
       expectTypeOf<Coerced>().toEqualTypeOf<{
          url?: "what";

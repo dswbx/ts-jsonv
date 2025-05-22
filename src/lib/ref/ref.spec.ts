@@ -1,9 +1,19 @@
 import { expectTypeOf } from "expect-type";
-import { type Static, type StaticCoersed } from "../static";
+import { type Static, type StaticCoerced } from "../static";
 import { recursive, ref, refId } from "./ref";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, object, anyOf, partialObject, array } from "../";
+import {
+   string,
+   number,
+   object,
+   anyOf,
+   partialObject,
+   array,
+   type TSchema,
+   type TSchemaInOut,
+   schema,
+} from "../";
 import { $kind } from "../symbols";
 
 describe("ref", () => {
@@ -65,7 +75,7 @@ describe("ref", () => {
          limit: number | string;
          offset: number;
       }>();
-      type Coerced = StaticCoersed<typeof query>;
+      type Coerced = StaticCoerced<typeof query>;
       expectTypeOf<Coerced>().toEqualTypeOf<{
          limit: number;
          offset: number;
@@ -165,49 +175,108 @@ describe("ref", () => {
       expect(s.coerce({ id: 1 })).toEqual({ id: "1" });
    });
 
-   test("recursive", () => {
-      const s = recursive((tthis) =>
-         object({
-            id: string(),
-            nodes: array(tthis),
-         })
-      );
-      expect(s.toJSON()).toEqual({
-         type: "object",
-         properties: {
-            id: {
-               type: "string",
-            },
-            nodes: {
-               type: "array",
-               items: {
-                  $ref: "#",
+   describe("recursive", () => {
+      test("types", () => {
+         const s = recursive((tthis) =>
+            object({
+               id: string(),
+               nodes: array(tthis),
+            })
+         );
+         type Inferred = Static<typeof s>;
+         expectTypeOf<Inferred>().toEqualTypeOf<{
+            id: string;
+            nodes: unknown[];
+         }>();
+         type Coerced = StaticCoerced<typeof s>;
+         expectTypeOf<Coerced>().toEqualTypeOf<{
+            id: string;
+            nodes: unknown[];
+         }>();
+      });
+
+      test.only("types with self fn", () => {
+         const withSchema = <T>(self: TSchema): TSchemaInOut<T, T> =>
+            anyOf([self, array(self)]);
+
+         const s = recursive((tthis) =>
+            partialObject(
+               {
+                  id: string(),
+                  nodes: withSchema(tthis),
+               },
+               {
+                  additionalProperties: schema(false),
+               }
+            )
+         );
+         type Inferred = Static<typeof s>;
+         expectTypeOf<Inferred>().toEqualTypeOf<{
+            id?: string;
+            nodes?: unknown;
+         }>();
+         type Coerced = StaticCoerced<typeof s>;
+         expectTypeOf<Coerced>().toEqualTypeOf<{
+            id?: string;
+            nodes?: unknown;
+         }>();
+
+         const example = {
+            id: 1,
+            nodes: { id: 2, nodes: [] },
+         };
+         console.log(s.coerce(example));
+         console.log(
+            s.validate(example, {
+               ignoreUnsupported: true,
+            })
+         );
+      });
+
+      test("raw", () => {
+         const s = recursive((tthis) =>
+            object({
+               id: string(),
+               nodes: array(tthis),
+            })
+         );
+         expect(s.toJSON()).toEqual({
+            type: "object",
+            properties: {
+               id: {
+                  type: "string",
+               },
+               nodes: {
+                  type: "array",
+                  items: {
+                     $ref: "#",
+                  },
                },
             },
-         },
-         required: ["id", "nodes"],
-      });
-      expect(s.coerce({ id: 1, nodes: [{ id: "2", nodes: [] }] })).toEqual({
-         id: "1",
-         nodes: [{ id: "2", nodes: [] }],
-      });
-      expect(
-         s.validate(
-            { id: "1", nodes: [{ id: 2, nodes: [] }] },
-            {
-               ignoreUnsupported: true,
-            }
-         )
-      ).toEqual({
-         valid: false,
-         errors: [
-            {
-               keywordLocation: "/properties/nodes/items/properties/id/type",
-               instanceLocation: "/nodes/0/id",
-               error: "Expected string",
-               data: 2,
-            },
-         ],
+            required: ["id", "nodes"],
+         });
+         expect(s.coerce({ id: 1, nodes: [{ id: "2", nodes: [] }] })).toEqual({
+            id: "1",
+            nodes: [{ id: "2", nodes: [] }],
+         });
+         expect(
+            s.validate(
+               { id: "1", nodes: [{ id: 2, nodes: [] }] },
+               {
+                  ignoreUnsupported: true,
+               }
+            )
+         ).toEqual({
+            valid: false,
+            errors: [
+               {
+                  keywordLocation: "/properties/nodes/items/properties/id/type",
+                  instanceLocation: "/nodes/0/id",
+                  error: "Expected string",
+                  data: 2,
+               },
+            ],
+         });
       });
    });
 });

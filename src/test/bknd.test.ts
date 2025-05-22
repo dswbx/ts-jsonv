@@ -3,6 +3,8 @@ import { expectTypeOf } from "expect-type";
 import * as s from "../lib";
 import { assertJson } from "../lib/assert";
 import type { NumberSchema } from "../lib/types";
+import { type CoercionOptions, type TAnyOf } from "../lib";
+import { isObject } from "../lib/utils";
 
 describe("Field", () => {
    const ActionContext = ["create", "read", "update", "delete"] as const;
@@ -209,7 +211,7 @@ describe("misc", () => {
             coerce: Number,
          });
       const n = numberOrString();
-      type NumberOrStringCoerced = s.StaticCoersed<typeof n>;
+      type NumberOrStringCoerced = s.StaticCoerced<typeof n>;
       expectTypeOf<NumberOrStringCoerced>().toEqualTypeOf<number>();
 
       const stringArray = s.anyOf(
@@ -230,7 +232,7 @@ describe("misc", () => {
       );
       type StringArrayIn = s.Static<typeof stringArray>;
       expectTypeOf<StringArrayIn>().toEqualTypeOf<string | string[]>();
-      type StringArrayOut = s.StaticCoersed<typeof stringArray>;
+      type StringArrayOut = s.StaticCoerced<typeof stringArray>;
       expectTypeOf<StringArrayOut>().toEqualTypeOf<string[]>();
 
       const sortObj = s.object({
@@ -259,7 +261,7 @@ describe("misc", () => {
               dir: "asc" | "desc";
            }
       >();
-      type SortOut = s.StaticCoersed<typeof sort>;
+      type SortOut = s.StaticCoerced<typeof sort>;
       expectTypeOf<SortOut>().toEqualTypeOf<{
          by: string;
          dir: "asc" | "desc";
@@ -281,7 +283,7 @@ describe("misc", () => {
          join?: string | string[];
       }>();
 
-      type RepoQueryOut = s.StaticCoersed<typeof repoQuery>;
+      type RepoQueryOut = s.StaticCoerced<typeof repoQuery>;
       expectTypeOf<RepoQueryOut>().toEqualTypeOf<{
          limit?: number;
          offset?: number;
@@ -290,12 +292,325 @@ describe("misc", () => {
          join?: string[];
       }>();
 
-      /* console.log(JSON.stringify(repoQuery.toJSON(), null, 2));
-      console.log(repoQuery.coerce({})); */
-
       expect(repoQuery.coerce({ limit: "11", select: "id" })).toEqual({
          limit: 11,
          select: ["id"],
       });
+   });
+
+   test("RepoQuery2", () => {
+      // -------
+      // helpers
+      const stringIdentifier = s.string({
+         // allow "id", "id,title" – but not "id," or "not allowed"
+         pattern: "^(?:[a-zA-Z_$][\\w$]*)(?:,[a-zA-Z_$][\\w$]*)*$",
+      });
+      const numberOrString = <N extends s.NumberSchema>(c: N = {} as N) =>
+         s.anyOf([s.number(c), s.string()], {
+            coerce: Number,
+         });
+      const stringArray = s.anyOf(
+         [
+            stringIdentifier,
+            s.array(stringIdentifier, {
+               uniqueItems: true,
+            }),
+         ],
+         {
+            coerce: (v): string[] => {
+               if (Array.isArray(v)) {
+                  return v;
+               } else if (typeof v === "string") {
+                  if (v.includes(",")) {
+                     return v.split(",");
+                  }
+                  return [v];
+               }
+               return [];
+            },
+         }
+      );
+
+      // -------
+      // sorting
+      const sortDefault = { by: "id", dir: "asc" };
+      const sortSchema = s.object({
+         by: s.string(),
+         dir: s.string({ enum: ["asc", "desc"] }).optional(),
+      });
+      type SortSchema = s.Static<typeof sortSchema>;
+      const sort = s.anyOf([s.string(), sortSchema], {
+         default: sortDefault,
+         coerce: (v): SortSchema => {
+            if (typeof v === "string") {
+               if (/^-?[a-zA-Z_][a-zA-Z0-9_.]*$/.test(v)) {
+                  const dir = v[0] === "-" ? "desc" : "asc";
+                  return { by: dir === "desc" ? v.slice(1) : v, dir } as any;
+               } else if (/^{.*}$/.test(v)) {
+                  return JSON.parse(v) as any;
+               }
+
+               return sortDefault as any;
+            }
+            return v as any;
+         },
+      });
+
+      // ------
+      // filter
+      const where = s.anyOf([s.string(), s.object({})], {
+         coerce: (value: unknown) => {
+            const q = typeof value === "string" ? JSON.parse(value) : value;
+            return { [Symbol("where")]: q };
+         },
+      });
+      type WhereSchemaIn = s.Static<typeof where>;
+      type WhereSchema = s.StaticCoerced<typeof where>;
+
+      // ------
+      // with
+      // @todo: waiting for recursion support
+      type RepoWithSchema = Record<
+         string,
+         Omit<RepoQueryIn, "with"> & {
+            with?: unknown;
+         }
+      >;
+
+      const withSchema = s.anyOf(
+         [
+            stringIdentifier,
+            s.array(stringIdentifier),
+            s.refId<RepoQueryIn>("#"),
+         ],
+         {
+            coerce: function (
+               this: TAnyOf<any>,
+               _value: unknown,
+               opts: CoercionOptions = {}
+            ) {
+               let value: any = _value;
+
+               if (typeof value === "string") {
+                  // if stringified object
+                  if (value.match(/^\{/) || value.match(/^\[/)) {
+                     value = JSON.parse(value) as RepoWithSchema;
+                  } else if (value.includes(",")) {
+                     value = value.split(",");
+
+                     // if single string
+                  } else {
+                     value = [value];
+                  }
+               }
+
+               if (!isObject(value)) {
+                  value = value.reduce((acc, v) => {
+                     acc[v] = {};
+                     return acc;
+                  }, {} as any) as RepoWithSchema;
+               }
+
+               const ref = opts?.resolver?.resolve("#")!;
+               for (const k in value) {
+                  value[k] = ref.coerce(value[k], opts);
+               }
+
+               return value;
+            },
+         }
+      );
+
+      // ==========
+      // REPO QUERY
+      const repoQuery = s.partialObject({
+         limit: numberOrString({ default: 10 }),
+         offset: numberOrString({ default: 0 }),
+         sort,
+         where,
+         select: stringArray,
+         join: stringArray,
+         with: withSchema,
+      });
+      type RepoQueryIn = {
+         limit?: number;
+         offset?: number;
+         sort?: string | { by: string; dir: "asc" | "desc" };
+         select?: string[];
+         with?: string | string[] | Record<string, RepoQueryIn>;
+         join?: string[];
+         where?: any;
+      };
+      type RepoQuery = s.StaticCoerced<typeof repoQuery>;
+
+      console.log(
+         "parse",
+         repoQuery.coerce({
+            limit: 10,
+            with: {
+               posts: { limit: "10" },
+            },
+         })
+      );
+   });
+
+   test.only("RepoQuery2", () => {
+      // -------
+      // helpers
+      const stringIdentifier = s.string({
+         // allow "id", "id,title" – but not "id," or "not allowed"
+         pattern: "^(?:[a-zA-Z_$][\\w$]*)(?:,[a-zA-Z_$][\\w$]*)*$",
+      });
+      const numberOrString = <N extends s.NumberSchema>(c: N = {} as N) =>
+         s.anyOf([s.number(c), s.string()]);
+      const stringArray = s.anyOf(
+         [
+            stringIdentifier,
+            s.array(stringIdentifier, {
+               uniqueItems: true,
+            }),
+         ],
+         {
+            coerce: (v): string[] => {
+               if (Array.isArray(v)) {
+                  return v;
+               } else if (typeof v === "string") {
+                  if (v.includes(",")) {
+                     return v.split(",");
+                  }
+                  return [v];
+               }
+               return [];
+            },
+         }
+      );
+
+      // -------
+      // sorting
+      const sortDefault = { by: "id", dir: "asc" };
+      const sortSchema = s.object({
+         by: s.string(),
+         dir: s.string({ enum: ["asc", "desc"] }).optional(),
+      });
+      type SortSchema = s.Static<typeof sortSchema>;
+      const sort = s.anyOf([s.string(), sortSchema], {
+         default: sortDefault,
+         coerce: (v): SortSchema => {
+            if (typeof v === "string") {
+               if (/^-?[a-zA-Z_][a-zA-Z0-9_.]*$/.test(v)) {
+                  const dir = v[0] === "-" ? "desc" : "asc";
+                  return { by: dir === "desc" ? v.slice(1) : v, dir } as any;
+               } else if (/^{.*}$/.test(v)) {
+                  return JSON.parse(v) as any;
+               }
+
+               return sortDefault as any;
+            }
+            return v as any;
+         },
+      });
+
+      // ------
+      // filter
+      const where = s.anyOf([s.string(), s.object({})], {
+         coerce: (value: unknown) => {
+            const q = typeof value === "string" ? JSON.parse(value) : value;
+            return { [Symbol("where")]: q };
+         },
+      });
+      type WhereSchemaIn = s.Static<typeof where>;
+      type WhereSchema = s.StaticCoerced<typeof where>;
+
+      // ------
+      // with
+      // @todo: waiting for recursion support
+      type RepoWithSchema = Record<
+         string,
+         Omit<RepoQueryIn, "with"> & {
+            with?: unknown;
+         }
+      >;
+
+      const withSchema = <In, Out = In>(
+         self: s.TSchema
+      ): s.TSchemaInOut<In, Out> =>
+         s.anyOf([stringIdentifier, s.array(stringIdentifier), self], {
+            coerce: function (
+               this: TAnyOf<any>,
+               _value: unknown,
+               opts: CoercionOptions = {}
+            ) {
+               let value: any = _value;
+
+               if (typeof value === "string") {
+                  // if stringified object
+                  if (value.match(/^\{/) || value.match(/^\[/)) {
+                     value = JSON.parse(value);
+                  } else if (value.includes(",")) {
+                     value = value.split(",");
+
+                     // if single string
+                  } else {
+                     value = [value];
+                  }
+               }
+
+               if (!isObject(value)) {
+                  value = value.reduce((acc, v) => {
+                     acc[v] = {};
+                     return acc;
+                  }, {} as any);
+               }
+
+               for (const k in value) {
+                  value[k] = self.coerce(value[k], opts);
+               }
+
+               return value as unknown as any;
+            },
+         }) as any;
+
+      // ==========
+      // REPO QUERY
+      const repoQuery = s.recursive((self) =>
+         s.partialObject({
+            limit: numberOrString({ default: 10 }),
+            offset: numberOrString({ default: 0 }),
+            sort,
+            where,
+            select: stringArray,
+            join: stringArray,
+            with: withSchema<RepoWithSchema>(self),
+         })
+      );
+      type RepoQueryIn = {
+         limit?: number;
+         offset?: number;
+         sort?: string | { by: string; dir: "asc" | "desc" };
+         select?: string[];
+         with?: string | string[] | Record<string, RepoQueryIn>;
+         join?: string[];
+         where?: any;
+      };
+      type RepoQuery = s.StaticCoerced<typeof repoQuery>;
+
+      let example = {
+         limit: 10,
+         with: {
+            posts: { limit: "10", with: ["comments"] },
+         },
+      };
+
+      console.log("coerced", repoQuery.coerce({ limit: false }));
+      console.log("coerced", repoQuery.coerce({ limit: "10" }));
+      console.log("coerced2", s.number().coerce(false));
+
+      /* console.log("parse", repoQuery.coerce(example));
+      console.log(
+         "validate",
+         repoQuery.validate(example, {
+            ignoreUnsupported: true,
+         })
+      ); */
    });
 });

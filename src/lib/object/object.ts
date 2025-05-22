@@ -8,7 +8,7 @@ import type {
    OptionalUndefined,
    Simplify,
    Static,
-   StaticCoersed,
+   StaticCoerced,
 } from "../static";
 import { $optional } from "../symbols";
 import { invariant, isSchema, isValidPropertyName } from "../utils";
@@ -21,7 +21,7 @@ type ObjectStatic<T extends TProperties> = {
    [K in keyof T]: Static<T[K]>;
 };
 type ObjectCoerced<T extends TProperties> = {
-   [K in keyof T]: StaticCoersed<T[K]>;
+   [K in keyof T]: StaticCoerced<T[K]>;
 };
 
 export interface ObjectSchema extends Omit<Partial<TSchema>, "properties"> {
@@ -88,7 +88,7 @@ type PartialObjectStatic<T extends TProperties> = {
 };
 
 type PartialObjectCoerced<T extends TProperties> = {
-   [K in keyof T]: StaticCoersed<T[K]> | undefined;
+   [K in keyof T]: StaticCoerced<T[K]> | undefined;
 };
 
 export type TPartialObject<
@@ -169,7 +169,14 @@ function template(this: TSchema, opts: TSchemaTemplateOptions = {}) {
 }
 
 function coerce(this: TSchema, _value: unknown, opts: CoercionOptions = {}) {
-   const value = typeof _value === "string" ? JSON.parse(_value) : _value;
+   //console.log("object:coerce", { _value, type: typeof _value });
+   let value = _value;
+   if (typeof value === "string") {
+      // if stringified object
+      if (value.match(/^\{/) || value.match(/^\[/)) {
+         value = JSON.parse(value);
+      }
+   }
 
    if (typeof value !== "object" || value === null) {
       return undefined;

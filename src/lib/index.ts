@@ -3,10 +3,11 @@ export {
    type TOptional,
    type TAnySchema,
    type TSchemaFn,
+   type TSchemaInOut,
    schema,
    any,
 } from "./schema";
-export type { Static, StaticConstEnum, StaticCoersed } from "./static";
+export type { Static, StaticConstEnum, StaticCoerced } from "./static";
 export {
    object,
    type ObjectSchema,
@@ -40,7 +41,7 @@ export {
    type UnionSchema,
 } from "./union/union";
 export { fromSchema } from "./schema/from-schema";
-export { ref, type TRef, refId, type TRefId } from "./ref/ref";
+export { ref, type TRef, refId, type TRefId, recursive } from "./ref/ref";
 export type {
    ValidationResult,
    ValidationOptions,

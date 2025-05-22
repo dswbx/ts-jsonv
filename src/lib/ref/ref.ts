@@ -1,10 +1,11 @@
 import {
+   type TAnySchema,
    type TCustomSchema,
    type TSchema,
    type TSchemaBase,
    schema,
 } from "../schema";
-import { type Static, type StaticCoersed } from "../static";
+import { type Static, type StaticCoerced } from "../static";
 import type { CoercionOptions } from "../validation/coerce";
 
 export type TRef<T extends TSchema> = TCustomSchema<
@@ -12,7 +13,7 @@ export type TRef<T extends TSchema> = TCustomSchema<
    Static<T>
 > & {
    $ref: string;
-   coerce: (value: unknown) => StaticCoersed<T>;
+   coerce: (value: unknown) => StaticCoerced<T>;
 };
 
 interface TRefSchema extends TSchema {
@@ -55,9 +56,10 @@ export const refId = <const Type = unknown, const Id extends string = string>(
 };
 
 // @todo: only # refs supported for now
-export const recursive = <const T extends TSchema>(
+export const recursive = <const T extends TAnySchema>(
    cb: (thisSchema: TSchema) => T
 ) => {
+   // @ts-ignore
    const { validate, ...thisType } = cb(schema({ $ref: "#" }, "recursive"));
-   return schema(thisType, "recursive") as any;
+   return schema(thisType, "recursive") as unknown as T;
 };

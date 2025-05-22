@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import type { Static, StaticCoersed } from "../static";
+import type { Static, StaticCoerced } from "../static";
 import { object, partialObject, record, strictObject } from "./object";
 import { any, type TSchema } from "../schema";
 import { assertJson } from "../assert";
@@ -328,9 +328,9 @@ describe("object", () => {
          const schema = object({
             name: s,
          });
-         type StringCoerced = StaticCoersed<typeof s>;
+         type StringCoerced = StaticCoerced<typeof s>;
          expectTypeOf<StringCoerced>().toEqualTypeOf<"asdf">();
-         type Coerced = StaticCoersed<typeof schema>;
+         type Coerced = StaticCoerced<typeof schema>;
          expectTypeOf<Coerced>().toEqualTypeOf<{ name: "asdf" }>();
       }
 
@@ -341,7 +341,7 @@ describe("object", () => {
                coerce: () => "asdf" as const,
             })
          );
-         type Coerced = StaticCoersed<typeof a>;
+         type Coerced = StaticCoerced<typeof a>;
          expectTypeOf<Coerced>().toEqualTypeOf<"asdf"[]>();
       }
 
@@ -358,7 +358,7 @@ describe("object", () => {
             url: string;
             force?: boolean;
          }>();
-         type Coerced = StaticCoersed<typeof s>;
+         type Coerced = StaticCoerced<typeof s>;
          expectTypeOf<Coerced>().toEqualTypeOf<{
             url: "asdf";
             force?: boolean;

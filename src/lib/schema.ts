@@ -1,5 +1,5 @@
 import { $kind, $optional, $raw } from "./symbols";
-import type { Static, StaticCoersed, StaticConstEnum } from "./static";
+import type { Static, StaticCoerced, StaticConstEnum } from "./static";
 import { isBoolean, isObject } from "./utils";
 import { validate } from "./validation/validate";
 import type {
@@ -44,7 +44,7 @@ export interface TOptional<Schema extends TSchema = TSchema> extends TSchema {
    optional: never;
    [$optional]: true;
    static: Static<Schema> | undefined;
-   coerce: (v: unknown) => StaticCoersed<Schema> | undefined;
+   coerce: (v: unknown) => StaticCoerced<Schema> | undefined;
 }
 
 export interface TSchemaBase {
@@ -147,6 +147,11 @@ export type TCustomSchema<
    [K in keyof Options]: Options[K];
 } & TSchemaFn;
 
+export interface TSchemaInOut<Type, TypeCoerced>
+   extends Omit<TSchema<Type>, "coerce"> {
+   coerce: (value: unknown, opts?: CoercionOptions) => TypeCoerced;
+}
+
 export const schema = <
    const Type = unknown,
    const S extends Partial<TSchema> | boolean = Partial<TSchema>,
@@ -193,12 +198,13 @@ export const schema = <
    };
 
    //
-   s2.coerce = function (value: unknown, opts: CoercionOptions = {}) {
+   s2.coerce = function (_value: unknown, opts: CoercionOptions = {}) {
       const ctx: Required<CoercionOptions> = {
          ...opts,
          resolver: opts.resolver || new Resolver(s2 as any),
          depth: opts.depth ? opts.depth + 1 : 0,
       };
+      let value = _value;
 
       if ("coerce" in s && s.coerce !== undefined) {
          return s.coerce(value, ctx);

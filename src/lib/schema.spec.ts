@@ -4,14 +4,14 @@ import type { Static } from "./static";
 import { type TSchema, any } from "./schema";
 import { assertJson } from "./assert";
 import { expectTypeOf } from "expect-type";
-import type { StaticCoersed } from "./static";
+import type { StaticCoerced } from "./static";
 import { $kind } from "./symbols";
 
 describe("schema", () => {
    test("TSchema", () => {
       type S = TSchema<1>;
       type Inferred = Static<S>;
-      type Coerced = StaticCoersed<S>;
+      type Coerced = StaticCoerced<S>;
       expectTypeOf<Inferred>().toEqualTypeOf<1>();
       expectTypeOf<Coerced>().toEqualTypeOf<1>();
    });
@@ -20,7 +20,7 @@ describe("schema", () => {
       const schema = any();
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<any>();
-      type Coerced = StaticCoersed<typeof schema>;
+      type Coerced = StaticCoerced<typeof schema>;
       expectTypeOf<Coerced>().toEqualTypeOf<any>();
 
       expect<any>(schema[$kind]).toEqual("any");
@@ -34,7 +34,7 @@ describe("schema", () => {
       });
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{ name?: any }>();
-      type Coerced = StaticCoersed<typeof schema>;
+      type Coerced = StaticCoerced<typeof schema>;
       expectTypeOf<Coerced>().toEqualTypeOf<{ name?: any }>();
 
       assertJson(schema, {

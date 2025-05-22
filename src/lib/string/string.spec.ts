@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import { type Static, type StaticCoersed } from "../static";
+import { type Static, type StaticCoerced } from "../static";
 import { string, stringConst } from "./string";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
@@ -42,7 +42,7 @@ describe("string", () => {
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<"hello">();
 
-      type Coerced = StaticCoersed<typeof schema>;
+      type Coerced = StaticCoerced<typeof schema>;
       expectTypeOf<Coerced>().toEqualTypeOf<"hello">();
 
       assertJson(schema, {
@@ -200,7 +200,7 @@ describe("string", () => {
          coerce: () => "value" as const,
       });
       type Inferred = Static<typeof schema>;
-      type Coerced = StaticCoersed<typeof schema>;
+      type Coerced = StaticCoerced<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<string>();
       expectTypeOf<Coerced>().toEqualTypeOf<"value">();
    });

@@ -1,5 +1,5 @@
 import { expectTypeOf } from "expect-type";
-import type { Static, StaticCoersed } from "../static";
+import type { Static, StaticCoerced } from "../static";
 import { $kind } from "../symbols";
 import { allOf, anyOf, oneOf } from "./union";
 import { assertJson } from "../assert";
@@ -104,7 +104,8 @@ describe("union", () => {
 
    test("coerce", () => {
       const schema = anyOf([string(), array(string())], {
-         coerce: (value: unknown): string[] => {
+         coerce: function (this: any, value: unknown): string[] {
+            //console.log("--calling custom coerce", { value, _this: this });
             if (typeof value === "string" && value.includes(",")) {
                return value.split(",");
             } else if (Array.isArray(value)) {
@@ -113,7 +114,7 @@ describe("union", () => {
             return [String(value)];
          },
       });
-      type Inferred = StaticCoersed<typeof schema>;
+      type Inferred = StaticCoerced<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<string[]>();
 
       expect(schema.coerce("test")).toEqual(["test"]);

@@ -7,7 +7,7 @@ import type {
 } from "../schema";
 import { schema } from "../schema";
 import { fromSchema } from "../schema/from-schema";
-import type { Merge, Static, StaticCoersed } from "../static";
+import type { Merge, Static, StaticCoerced } from "../static";
 import { mergeAllOf } from "../utils/merge-allof";
 import type { CoercionOptions } from "../validation/coerce";
 import { matches } from "../validation/keywords";
@@ -26,8 +26,8 @@ type StaticUnionCoerced<T extends TAnySchema[]> = T extends [
 ]
    ? U extends TAnySchema
       ? Rest extends TAnySchema[]
-         ? StaticUnionCoerced<Rest> | StaticCoersed<U>
-         : StaticCoersed<U>
+         ? StaticUnionCoerced<Rest> | StaticCoerced<U>
+         : StaticCoerced<U>
       : never
    : never;
 
@@ -54,11 +54,12 @@ export const anyOf = <
          ...options,
          coerce: function (
             this: TAnyOf<T, O>,
-            value: unknown,
+            _value: unknown,
             opts: CoercionOptions = {}
          ) {
+            let value = _value;
             if ("coerce" in options && options.coerce !== undefined) {
-               return options.coerce(value, opts);
+               return options.coerce.bind(this)(_value, opts);
             }
 
             const m = matches(schemas, value, {
