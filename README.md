@@ -296,7 +296,7 @@ Currently unsupported, but planned:
 -  [ ] meta schemas and `vocabulary`
 -  [ ] Additional optional formats: `idn-email`, `idn-hostname`, `iri`, `iri-reference`
 
-Benchmark results:
+Benchmark results (simple schemas):
 
 ```sh
 clk: ~3.09 GHz
