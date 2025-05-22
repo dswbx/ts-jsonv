@@ -120,10 +120,9 @@ export function validate(
    );
 
    if (opts.ignoreUnsupported !== true) {
-      // @todo: readOnly
       // @todo: $ref
       // @todo: $defs
-      const todo = ["$ref", "$defs"];
+      const todo = ["$defs"];
       for (const item of todo) {
          if (s[item]) {
             throw new Error(`${item} not implemented`);
