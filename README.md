@@ -25,7 +25,7 @@ npm install jsonv-ts
 ```ts
 import * as s from "jsonv-ts";
 
-const UserSchema = s.object({
+const schema = s.object({
    id: s.number(),
    username: s.string({ minLength: 3 }),
    email: s.string({ format: "email" }).optional(),
@@ -41,7 +41,7 @@ const UserSchema = s.object({
 // }
 
 // Infer the TypeScript type from the schema
-type User = s.Static<typeof UserSchema>;
+type User = s.Static<typeof schema>;
 // { id: number; username: string; email?: string | undefined }
 
 // Example usage:
@@ -55,10 +55,10 @@ const user: User = {
 // const invalidUser: User = { id: 'abc', username: 'jd' }; // Type error
 
 // Use the integrated validation
-const result = UserSchema.validate(user);
+const result = schema.validate(user);
 // { valid: true, errors: [] }
 
-const result2 = UserSchema.validate({ id: 1 });
+const result2 = schema.validate({ id: 1 });
 // {
 //  "valid": false,
 //  "errors": [
@@ -91,28 +91,28 @@ Below are the primary functions for building schemas:
 Defines a string type. Optional `schema` can include standard JSON schema string constraints like `minLength`, `maxLength`, `pattern`, `format`, etc.
 
 ```ts
-const EmailSchema = s.string({ format: "email" });
+const schema = s.string({ format: "email" });
 // { type: "string", format: "email" }
 
-type Email = s.Static<typeof EmailSchema>; // string
+type Email = s.Static<typeof schema>; // string
 ```
 
 To define an Enum, you can add the `enum` property to the schema. It'll be inferred correctly.
 
 ```ts
-const ColorSchema = s.string({ enum: ["red", "green", "blue"] });
+const schema = s.string({ enum: ["red", "green", "blue"] });
 // { type: "string", enum: [ "red", "green", "blue" ] }
 
-type Color = s.Static<typeof ColorSchema>; // "red" | "green" | "blue"
+type Color = s.Static<typeof schema>; // "red" | "green" | "blue"
 ```
 
 The same applies to Constants:
 
 ```ts
-const StatusSchema = s.string({ const: "active" });
+const schema = s.string({ const: "active" });
 // { type: "string", const: "active" }
 
-type Status = s.Static<typeof StatusSchema>; // "active"
+type Status = s.Static<typeof schema>; // "active"
 ```
 
 ### Numbers
@@ -120,24 +120,24 @@ type Status = s.Static<typeof StatusSchema>; // "active"
 Defines a number type. Optional `schema` can include `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`.
 
 ```ts
-const PositiveNumberSchema = s.number({ minimum: 0 });
+const schema = s.number({ minimum: 0 });
 // { type: "number", minimum: 0 }
 
-type PositiveNumber = s.Static<typeof PositiveNumberSchema>; // number
+type PositiveNumber = s.Static<typeof schema>; // number
 ```
 
 Just like with Strings, you can use Enums and Constants with Numbers:
 
 ```ts
-const AgeSchema = s.number({ enum: [18, 21, 25] });
+const enumSchema = s.number({ enum: [18, 21, 25] });
 // { type: "number", enum: [ 18, 21, 25 ] }
 
-type Age = s.Static<typeof AgeSchema>; // 18 | 21 | 25
+type Age = s.Static<typeof enumSchema>; // 18 | 21 | 25
 
-const StatusSchema = s.number({ const: 200 });
+const constSchema = s.number({ const: 200 });
 // { type: "number", const: 200 }
 
-type Status = s.Static<typeof StatusSchema>; // 200
+type Status = s.Static<typeof constSchema>; // 200
 ```
 
 ### Integers
@@ -149,10 +149,10 @@ Defines an integer type. This is a shorthand for `s.number({ type: "integer", ..
 Defines a boolean type.
 
 ```ts
-const ActiveSchema = s.boolean();
+const schema = s.boolean();
 // { type: "boolean" }
 
-type Active = s.Static<typeof ActiveSchema>; // boolean
+type Active = s.Static<typeof schema>; // boolean
 ```
 
 ### Arrays
@@ -160,10 +160,10 @@ type Active = s.Static<typeof ActiveSchema>; // boolean
 Defines an array type where all items must match the `items` schema. Optional `schema` can include `minItems`, `maxItems`, `uniqueItems`.
 
 ```ts
-const TagsSchema = s.array(s.string({ minLength: 1 }), { minItems: 1 });
+const schema = s.array(s.string({ minLength: 1 }), { minItems: 1 });
 // { type: "array", items: { type: "string", minLength: 1 }, minItems: 1 }
 
-type Tags = s.Static<typeof TagsSchema>; // string[]
+type Tags = s.Static<typeof schema>; // string[]
 ```
 
 ### Objects
@@ -171,7 +171,7 @@ type Tags = s.Static<typeof TagsSchema>; // string[]
 Defines an object type with named `properties`. By default, all properties defined are required. Use `optional()` to mark properties as optional. Optional `schema` can include `required`, `additionalProperties`, `minProperties`, `maxProperties`.
 
 ```ts
-const ProductSchema = s.object({
+const schema = s.object({
    productId: s.integer(),
    name: s.string(),
    price: s.number({ minimum: 0 }),
@@ -188,7 +188,7 @@ const ProductSchema = s.object({
 //   required: [ 'productId', 'name', 'price' ]
 // }
 
-type Product = s.Static<typeof ProductSchema>;
+type Product = s.Static<typeof schema>;
 // {
 //   productId: number;
 //   name: string;
@@ -200,7 +200,7 @@ type Product = s.Static<typeof ProductSchema>;
 You may also use the `s.strictObject()` function to create a strict object schema which sets `additionalProperties` to `false`.
 
 ```ts
-const UserSchema = s.strictObject({
+const schema = s.strictObject({
    id: s.integer(),
    username: s.string().optional(),
 });
@@ -215,7 +215,7 @@ const UserSchema = s.strictObject({
 // }
 
 // it's equivalent to:
-const UserSchema = s.object(
+const schema = s.object(
    {
       id: s.integer(),
       username: s.string().optional(),
@@ -229,7 +229,7 @@ const UserSchema = s.object(
 Or for records, use `s.record()`.
 
 ```ts
-const UserSchema = s.record(s.string());
+const schema = s.record(s.string());
 // {
 //   type: "object",
 //   additionalProperties: {
@@ -237,7 +237,7 @@ const UserSchema = s.record(s.string());
 //   }
 // }
 
-type User = s.Static<typeof UserSchema>;
+type User = s.Static<typeof schema>;
 // { [key: string]: string }
 ```
 
@@ -252,10 +252,10 @@ Combine multiple schemas using union keywords:
 ```ts
 import * as s from "jsonv-ts";
 
-const StringOrNumberSchema = s.anyOf([s.string(), s.number()]);
+const schema = s.anyOf([s.string(), s.number()]);
 // { anyOf: [ { type: 'string' }, { type: 'number' } ] }
 
-type StringOrNumber = s.Static<typeof StringOrNumberSchema>; // string | number
+type StringOrNumber = s.Static<typeof schema>; // string | number
 ```
 
 ## Validation
@@ -263,7 +263,7 @@ type StringOrNumber = s.Static<typeof StringOrNumberSchema>; // string | number
 The schemas created with `jsonv-ts` are standard JSON Schema objects and can be used with any compliant validator. The library ensures that when the schema object is converted to JSON (e.g., using `JSON.stringify`), only standard JSON Schema properties are included, stripping any internal metadata. For the examples, this is going to be the base schema object.
 
 ```ts
-const UserSchema = s.object({
+const schema = s.object({
    id: s.integer({ minimum: 1 }),
    username: s.string({ minLength: 3 }),
    email: s.string({ format: "email" }).optional(),
@@ -276,7 +276,7 @@ const UserSchema = s.object({
 The library includes an integrated validator that can be used to validate instances against the schema.
 
 ```ts
-const result = UserSchema.validate({ id: 1, username: "valid_user" });
+const result = schema.validate({ id: 1, username: "valid_user" });
 // { valid: true, errors: [] }
 ```
 
@@ -296,6 +296,38 @@ Currently unsupported, but planned:
 -  [ ] meta schemas and `vocabulary`
 -  [ ] Additional optional formats: `idn-email`, `idn-hostname`, `iri`, `iri-reference`
 
+Benchmark results:
+
+```sh
+clk: ~3.09 GHz
+cpu: Apple M1 Max
+runtime: bun 1.2.14 (arm64-darwin)
+
+benchmark                   avg (min … max) p75 / p99    (min … top 1%)
+------------------------------------------- -------------------------------
+@cfworker/json-schema         17.82 µs/iter  18.04 µs  █
+                     (15.00 µs … 478.92 µs)  30.42 µs  ██
+                    (  0.00  b … 288.00 kb)   1.10 kb ▂██▆▄▄▂▂▃▃▂▂▂▁▁▁▁▁▁▁▁
+
+ajv (jit)                     15.21 ms/iter  16.20 ms  █  ▃
+                      (13.45 ms … 17.71 ms)  17.69 ms  █▂▇█▇▇▇▇▇      ▂▇ ▂
+                    (  0.00  b …   6.56 mb) 882.38 kb ▆█████████▆▁▁▆▁▆██▆█▆
+
+json-schema-library           78.42 µs/iter  79.58 µs  █▅
+                     (67.17 µs … 844.29 µs) 134.58 µs  ██▆
+                    (  0.00  b … 208.00 kb)   1.45 kb ▄████▅▄▃▂▂▁▁▁▁▁▁▁▁▁▁▁
+
+jsonv-ts                      22.71 µs/iter  22.25 µs  █
+                     (19.50 µs … 588.46 µs)  46.13 µs  █
+                    (  0.00  b …  96.00 kb) 559.85  b ▂██▄▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+
+summary
+  @cfworker/json-schema
+   1.27x faster than jsonv-ts
+   4.4x faster than json-schema-library
+   853.37x faster than ajv (jit)
+```
+
 ### Using `ajv`
 
 ```ts
@@ -307,7 +339,7 @@ import addFormats from "ajv-formats";
 const ajv = new Ajv();
 addFormats(ajv); // Recommended for formats like 'email'
 
-const validate = ajv.compile(UserSchema.toJSON());
+const validate = ajv.compile(schema.toJSON());
 
 const validUser = { id: 1, username: "valid_user", email: "test@example.com" };
 const invalidUser = { id: 0, username: "no" }; // Fails minimum and minLength
@@ -336,7 +368,7 @@ const resultValid = validator.validate(validUser, UserSchema.toJSON());
 console.log(resultValid.valid); // true
 // For errors: console.log(resultValid.errors);
 
-const resultInvalid = validator.validate(invalidUser, UserSchema.toJSON());
+const resultInvalid = validator.validate(invalidUser, schema.toJSON());
 console.log(resultInvalid.valid); // false
 // For errors: console.log(resultInvalid.errors);
 ```
@@ -346,7 +378,7 @@ console.log(resultInvalid.valid); // false
 ```ts
 import { compileSchema } from "json-schema-library";
 
-const schema = compileSchema(UserSchema.toJSON());
+const schema = compileSchema(schema.toJSON());
 
 const validUser = { id: 1, username: "valid_user", email: "test@example.com" };
 const invalidUser = { id: 0, username: "no" };

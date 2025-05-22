@@ -28,6 +28,7 @@
       "test": "bun types && bun test:unit && bun test:spec",
       "test:spec": "clear && bun run src/test/spec/run.ts",
       "build": "tsup",
+      "benchmark": "bun run src/test/validation/benchmark.ts",
       "fetch": "npx giget gh:json-schema-org/JSON-Schema-Test-Suite/tests src/test/spec/lib",
       "prepublishOnly": "bun run build",
       "release:patch": "bun run test && npm version patch && git push && git push --tags && npm publish",
@@ -42,7 +43,9 @@
       "expect-type": "^1.2.1",
       "hono": "^4.7.9",
       "json-schema-library": "^10.0.0",
+      "mitata": "^1.0.34",
       "picocolors": "^1.1.1",
+      "tinybench": "^4.0.1",
       "tsup": "^8.4.0"
    },
    "peerDependencies": {
