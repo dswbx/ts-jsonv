@@ -3,11 +3,18 @@ import { Hono } from "hono";
 import { describeRoute, openAPISpecs } from "./openapi";
 import { validator } from "../middleware";
 import * as s from "../../lib";
+import { schemaToSpec } from "./utils";
 
 describe("openapi", () => {
    test("...", async () => {
       const app = new Hono();
 
+      const sub = new Hono();
+      sub.get("/", validator("query", s.object({ name: s.string() })), (c) =>
+         c.text("hello")
+      );
+
+      app.route("/sub", sub);
       app.get("/", openAPISpecs(app));
 
       app.get(
@@ -37,7 +44,10 @@ describe("openapi", () => {
          validator("query", s.object({ name: s.string() })),
          validator("param", s.object({ id: s.string() })),
          validator("json", s.object({ name: s.string() })),
-         validator("cookie", s.partialObject({ name: s.string() })),
+         validator(
+            "cookie",
+            s.partialObject({ name: s.string({ description: "Name" }) })
+         ),
          async (c) => {
             return c.text("hello");
          }
@@ -46,5 +56,6 @@ describe("openapi", () => {
       const res = await app.request("/");
       const data = await res.json();
       console.log(JSON.stringify(data, null, 2));
+      console.log(schemaToSpec(s.object({ name: s.string() }), "query"));
    });
 });

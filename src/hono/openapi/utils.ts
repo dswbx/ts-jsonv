@@ -65,8 +65,9 @@ export function schemaToSpec(
             return {
                name: key,
                in: _in,
-               required: obj.required?.includes(key) ?? false,
-               schema: subSchema.toJSON(),
+               required: obj.required?.includes(key) || undefined,
+               description: subSchema.description || undefined,
+               schema: structuredClone(subSchema.toJSON()),
             };
          }),
       };
@@ -74,7 +75,11 @@ export function schemaToSpec(
       return {
          requestBody: {
             content: {
-               [_requestBody.type]: { schema: obj.toJSON() },
+               [_requestBody.type]: {
+                  schema: structuredClone(obj.toJSON()),
+                  example:
+                     obj.examples?.[0] ?? obj.template({ withOptional: true }),
+               },
             },
          },
       };
@@ -82,3 +87,53 @@ export function schemaToSpec(
 
    return {};
 }
+
+export const toOpenAPIPath = (path: string) =>
+   path
+      .split("/")
+      .map((x) => {
+         let tmp = x;
+         if (tmp.startsWith(":")) {
+            const match = tmp.match(/^:([^{?]+)(?:{(.+)})?(\?)?$/);
+            if (match) {
+               const paramName = match[1];
+               tmp = `{${paramName}}`;
+            } else {
+               tmp = tmp.slice(1, tmp.length);
+               if (tmp.endsWith("?")) tmp = tmp.slice(0, -1);
+               tmp = `{${tmp}}`;
+            }
+         }
+
+         return tmp;
+      })
+      .join("/");
+
+export const capitalize = (word: string) =>
+   word.charAt(0).toUpperCase() + word.slice(1);
+
+const generateOperationIdCache = new Map<string, string>();
+
+export const generateOperationId = (method: string, paths: string) => {
+   const key = `${method}:${paths}`;
+
+   if (generateOperationIdCache.has(key)) {
+      return generateOperationIdCache.get(key) as string;
+   }
+
+   let operationId = method;
+
+   if (paths === "/") return `${operationId}Index`;
+
+   for (const path of paths.split("/")) {
+      if (path.charCodeAt(0) === 123) {
+         operationId += `By${capitalize(path.slice(1, -1))}`;
+      } else {
+         operationId += capitalize(path);
+      }
+   }
+
+   generateOperationIdCache.set(key, operationId);
+
+   return operationId;
+};

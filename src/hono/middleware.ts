@@ -13,6 +13,7 @@ import { $symbol } from "./shared";
 export type Options = {
    coerce?: boolean;
    includeSchema?: boolean;
+   skipOpenAPI?: boolean;
 };
 
 type ValidationResult = {
@@ -67,6 +68,10 @@ export const validator = <
 
       return value as Out;
    });
+
+   if (options?.skipOpenAPI) {
+      return middleware as any;
+   }
 
    return Object.assign(middleware, {
       [$symbol]: {

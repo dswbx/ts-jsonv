@@ -1,7 +1,12 @@
 import type { Env, Hono } from "hono";
 import type { MiddlewareHandler } from "hono/types";
 import { $symbol } from "../shared";
-import { merge, schemaToSpec } from "./utils";
+import {
+   merge,
+   schemaToSpec,
+   toOpenAPIPath,
+   generateOperationId,
+} from "./utils";
 import * as t from "./types";
 
 export const openAPISpecs = <E extends Env>(
@@ -18,13 +23,16 @@ export const openAPISpecs = <E extends Env>(
          for (const route of hono.routes) {
             if ($symbol in route.handler) {
                const method = route.method.toLowerCase();
-               const path = route.path;
+               const path = toOpenAPIPath(route.path);
                const { type, value } = route.handler[$symbol] as any;
                if (!specs.paths[path]) {
                   specs.paths[path] = {};
                }
                if (!specs.paths[path][method]) {
-                  specs.paths[path][method] = {};
+                  specs.paths[path][method] = {
+                     responses: {},
+                     operationId: generateOperationId(method, path),
+                  };
                }
                const obj = specs.paths[path][method];
 
