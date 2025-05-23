@@ -3,7 +3,7 @@
    "main": "dist/lib/index.js",
    "module": "dist/lib/index.js",
    "types": "dist/lib/index.d.ts",
-   "version": "0.0.12",
+   "version": "0.0.14-alpha.6",
    "sideEffects": false,
    "typesVersions": {
       "*": {
@@ -44,6 +44,7 @@
       "hono": "^4.7.9",
       "json-schema-library": "^10.0.0",
       "mitata": "^1.0.34",
+      "openapi-types": "^12.1.3",
       "picocolors": "^1.1.1",
       "tinybench": "^4.0.1",
       "tsup": "^8.4.0"

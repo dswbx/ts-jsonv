@@ -8,10 +8,12 @@ import type {
 import { validator as honoValidator } from "hono/validator";
 import type { Static, StaticCoerced } from "../lib";
 import type { TAnySchema } from "../lib/schema";
+import { $symbol } from "./shared";
 
 export type Options = {
    coerce?: boolean;
    includeSchema?: boolean;
+   skipOpenAPI?: boolean;
 };
 
 type ValidationResult = {
@@ -49,8 +51,7 @@ export const validator = <
    options?: Opts,
    hook?: Hook<Out, E, P>
 ): MiddlewareHandler<E, P, I> => {
-   // @ts-expect-error not typed well
-   return honoValidator(target, async (_value, c) => {
+   const middleware = honoValidator(target, async (_value, c) => {
       const value = options?.coerce !== false ? schema.coerce(_value) : _value;
       // @ts-ignore
       const result = schema.validate(value);
@@ -67,4 +68,18 @@ export const validator = <
 
       return value as Out;
    });
+
+   if (options?.skipOpenAPI) {
+      return middleware as any;
+   }
+
+   return Object.assign(middleware, {
+      [$symbol]: {
+         type: "parameters",
+         value: {
+            target,
+            schema,
+         },
+      },
+   }) as any;
 };

@@ -59,6 +59,7 @@ export interface TSchemaBase {
    writeOnly?: boolean;
    $defs?: { [key in PropertyName]: TSchemaBase };
    $comment?: string;
+   examples?: any[];
 
    // data types & common
    type?: JSONSchemaTypeName | JSONSchemaTypeName[];
