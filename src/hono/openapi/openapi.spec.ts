@@ -5,19 +5,22 @@ import { validator } from "../middleware";
 import * as s from "../../lib";
 import { schemaToSpec } from "./utils";
 
+const sub = new Hono().get(
+   "/",
+   validator("query", s.object({ name: s.string() })),
+   (c) => c.text("hello")
+);
+
+const sub2 = new Hono().route("/", sub);
+
 describe("openapi", () => {
    test("...", async () => {
       const app = new Hono();
 
-      const sub = new Hono();
-      sub.get("/", validator("query", s.object({ name: s.string() })), (c) =>
-         c.text("hello")
-      );
-
-      app.route("/sub", sub);
+      app.route("/sub", sub2);
       app.get("/", openAPISpecs(app));
 
-      app.get(
+      /* app.get(
          "/test/:id",
          describeRoute({
             summary: "Test",
@@ -51,7 +54,7 @@ describe("openapi", () => {
          async (c) => {
             return c.text("hello");
          }
-      );
+      ); */
 
       const res = await app.request("/");
       const data = await res.json();

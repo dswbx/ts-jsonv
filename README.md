@@ -1,11 +1,41 @@
 [![npm version](https://img.shields.io/npm/v/jsonv-ts.svg)](https://npmjs.org/package/jsonv-ts)
 ![gzipped size of jsonv-ts](https://img.badgesize.io/https://unpkg.com/jsonv-ts@latest/dist/lib/index.js?compression=gzip&label=jsonv-ts)
 
-# jsonv-ts
+# jsonv-ts: JSON Schema Builder and Validator for TypeScript
 
-A simple, lightweight (<6kb gzipped) and dependency-free TypeScript library for defining and validating JSON schemas with static type inference. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified. It has an integrated validator that can be used to validate instances against the latest JSON schema draft (2020-12).
+<!-- TOC depthfrom:2 updateonsave:true -->
+
+-  [Overview](#overview)
+-  [Installation](#installation)
+-  [Example](#example)
+-  [Motivation](#motivation)
+-  [Schema Types](#schema-types)
+   -  [Strings](#strings)
+   -  [Numbers](#numbers)
+   -  [Integers](#integers)
+   -  [Booleans](#booleans)
+   -  [Arrays](#arrays)
+   -  [Objects](#objects)
+   -  [Unions](#unions)
+   -  [From Schema](#from-schema)
+   -  [Custom Schemas](#custom-schemas)
+-  [Hono Integration](#hono-integration)
+   -  [Validator Middleware](#validator-middleware)
+   -  [OpenAPI generation](#openapi-generation)
+-  [Validation](#validation)
+   -  [Integrated Validator](#integrated-validator)
+   -  [Using ajv](#using-ajv)
+   -  [Using @cfworker/json-schema](#using-cfworkerjson-schema)
+   -  [Using json-schema-library](#using-json-schema-library)
+-  [Development](#development)
+-  [License](#license)
+-  [Acknowledgements](#acknowledgements)
+
+<!-- /TOC -->
 
 ## Overview
+
+A simple, lightweight (<6kb gzipped) and dependency-free TypeScript library for defining and validating JSON schemas with static type inference. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified. It has an integrated validator that can be used to validate instances against the latest JSON schema draft (2020-12).
 
 `jsonv-ts` allows you to define JSON schemas using a TypeScript API. It provides functions for all standard JSON schema types (`object`, `string`, `number`, `array`, `boolean`) as well as common patterns like `optional` fields, union types (`anyOf`, `oneOf`, and `allOf`), and constants/enums. The `Static` type helper infers the corresponding TypeScript type directly from your schema definition.
 
@@ -82,7 +112,7 @@ But if you need controllable and predictable schema validation, this library is 
 
 JSON Schema is simple, elegant and well-defined, so why not use it directly?
 
-## API Reference
+## Schema Types
 
 Below are the primary functions for building schemas:
 
@@ -258,6 +288,112 @@ const schema = s.anyOf([s.string(), s.number()]);
 type StringOrNumber = s.Static<typeof schema>; // string | number
 ```
 
+### From Schema
+
+In case you need schema functionality such as validation of coercion, but only have raw JSON schema definitions, you may use `s.fromSchema()`:
+
+```ts
+const schema = s.fromSchema({
+   type: "string",
+   maxLength: 10,
+});
+```
+
+There is no type inference, but it tries to read the schema added and maps it to the corresponding schema function. In this case, `s.string()` will be used. The benefit of using this function over `s.schema()` (described below) is that coercion logic is applied.
+
+This function is mainly added to perform the tests against the JSON Schema Test Suite.
+
+### Custom Schemas
+
+In case you need to define a custom schema, e.g. without `type` to be added, you may simply use `s.schema()`:
+
+```ts
+const schema = s.schema({
+   // any valid JSON schema object
+   maxLength: 10,
+});
+```
+
+It can also be used to define boolean schemas:
+
+```ts
+const alwaysTrue = s.schema(true);
+const alwaysFalse = s.schema(false);
+```
+
+## Hono Integration
+
+### Validator Middleware
+
+If you're using [Hono](https://hono.dev/) and want to validate the request targets (query, body, etc.), you can use the `validator` middleware.
+
+```ts
+import { Hono } from "hono";
+import { validator } from "jsonv-ts/hono";
+import * as s from "jsonv-ts";
+
+const app = new Hono().post(
+   "/json",
+   validator("json", s.object({ name: s.string() })),
+   (c) => {
+      const json = c.req.valid("json");
+      //    ^? { name: string }
+      return c.json(json);
+   }
+);
+```
+
+It also automatically coerces e.g. query parameters to the corresponding type.
+
+```ts
+import { Hono } from "hono";
+import { validator } from "jsonv-ts/hono";
+import * as s from "jsonv-ts";
+
+const app = new Hono().get(
+   "/query",
+   validator("query", s.object({ count: s.number() })),
+   (c) => {
+      const query = c.req.valid("query");
+      //    ^? { count: number }
+      return c.json(query);
+   }
+);
+```
+
+### OpenAPI generation
+
+Every route that uses the `validator` middleware will be automatically added to the OpenAPI specification. Additionally, you can use the `describeRoute` function to add additional information to the route, or add routes that don't use any validations:
+
+```ts
+import { Hono } from "hono";
+import { describeRoute } from "jsonv-ts/hono";
+
+const app = new Hono().get(
+   "/",
+   describeRoute({ summary: "Hello, world!" }),
+   (c) => c.json({ foo: "bar" })
+);
+```
+
+To then generate the OpenAPI specification, you can use the `openAPISpecs` function at a desired path:
+
+```ts
+import { openAPISpecs } from "jsonv-ts/hono";
+
+const app = /* ... your hono app */;
+app.get("/openapi.json", openAPISpecs(app, { info: { title: "My API" } }));
+```
+
+You may then use Swagger UI to view the API documentation:
+
+```ts
+import { swaggerUI } from "@hono/swagger-ui";
+
+const app = /* ... your hono app */;
+app.get("/swagger", swaggerUI({ url: "/openapi.json" }));
+```
+
 ## Validation
 
 The schemas created with `jsonv-ts` are standard JSON Schema objects and can be used with any compliant validator. The library ensures that when the schema object is converted to JSON (e.g., using `JSON.stringify`), only standard JSON Schema properties are included, stripping any internal metadata. For the examples, this is going to be the base schema object.
@@ -408,3 +544,4 @@ MIT
 -  [@cfworker/json-schema](https://github.com/cfworker/json-schema) for some inspiration
 -  [schemasafe](https://github.com/ExodusMovement/schemasafe) for the format keywords
 -  [JSON Schema Test Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite) for the validation tests
+-  [hono-openapi](https://github.com/rhinobase/hono-openapi) for the OpenAPI generation inspiration
