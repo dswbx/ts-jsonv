@@ -435,33 +435,33 @@ Currently unsupported, but planned:
 Benchmark results (simple schemas):
 
 ```sh
-clk: ~3.09 GHz
+clk: ~3.13 GHz
 cpu: Apple M1 Max
 runtime: bun 1.2.14 (arm64-darwin)
 
 benchmark                   avg (min … max) p75 / p99    (min … top 1%)
 ------------------------------------------- -------------------------------
-@cfworker/json-schema         17.82 µs/iter  18.04 µs  █
-                     (15.00 µs … 478.92 µs)  30.42 µs  ██
-                    (  0.00  b … 288.00 kb)   1.10 kb ▂██▆▄▄▂▂▃▃▂▂▂▁▁▁▁▁▁▁▁
+@cfworker/json-schema          5.30 µs/iter   5.08 µs  █
+                      (4.42 µs … 523.92 µs)  10.92 µs  █▄
+                    (  0.00  b … 272.00 kb) 339.01  b ▄██▄▂▂▁▁▁▁▁▁▁▁▁▁▁▂▂▁▁
 
-ajv (jit)                     15.21 ms/iter  16.20 ms  █  ▃
-                      (13.45 ms … 17.71 ms)  17.69 ms  █▂▇█▇▇▇▇▇      ▂▇ ▂
-                    (  0.00  b …   6.56 mb) 882.38 kb ▆█████████▆▁▁▆▁▆██▆█▆
+ajv (jit)                     14.36 ms/iter  15.24 ms  ▃▃▃▃██
+                      (12.51 ms … 17.44 ms)  17.44 ms  ██████  ▂▂▂  ▂▇
+                    (  0.00  b …   4.92 mb) 813.71 kb ▆██████▆▁███▁▆██▆▁▆▆▆
 
-json-schema-library           78.42 µs/iter  79.58 µs  █▅
-                     (67.17 µs … 844.29 µs) 134.58 µs  ██▆
-                    (  0.00  b … 208.00 kb)   1.45 kb ▄████▅▄▃▂▂▁▁▁▁▁▁▁▁▁▁▁
+json-schema-library           60.83 µs/iter  61.50 µs  █
+                     (53.75 µs … 750.21 µs)  89.58 µs  ██▇▂
+                    (  0.00  b …  32.00 kb) 978.85  b ▂████▇▅▄▃▂▂▂▁▁▁▁▁▁▁▁▁
 
-jsonv-ts                      22.71 µs/iter  22.25 µs  █
-                     (19.50 µs … 588.46 µs)  46.13 µs  █
-                    (  0.00  b …  96.00 kb) 559.85  b ▂██▄▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+jsonv-ts                      23.33 µs/iter  22.13 µs  █
+                     (19.75 µs … 840.25 µs)  44.58 µs  █▂
+                    (  0.00  b … 112.00 kb) 553.67  b ▂██▃▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
 
 summary
   @cfworker/json-schema
-   1.27x faster than jsonv-ts
-   4.4x faster than json-schema-library
-   853.37x faster than ajv (jit)
+   4.4x faster than jsonv-ts
+   11.48x faster than json-schema-library
+   2709.82x faster than ajv (jit)
 ```
 
 ### Using `ajv`

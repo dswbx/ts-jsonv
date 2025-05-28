@@ -29,33 +29,48 @@ export const schemas = [
    },
 ] as const;
 
-export const validators: {
+export type TValidator<Schema = any> = {
    name: string;
-   validate: (schema: s.TSchema, data: unknown) => boolean;
-}[] = [
+   prepare: (schema: s.TSchema, data: unknown) => Schema;
+   validate: (schema: Schema, data: unknown) => boolean;
+};
+
+export const validators: TValidator[] = [
    {
       name: "@cfworker/json-schema",
+      prepare: (schema) => {
+         return schema.toJSON();
+      },
       validate: (schema, data) => {
-         return new Validator(schema.toJSON()).validate(data).valid;
+         return new Validator(schema).validate(data).valid;
       },
    },
    {
       name: "ajv (jit)",
+      prepare: (schema) => {
+         return schema.toJSON();
+      },
       validate: (schema, data) => {
          const ajv = new Ajv();
-         return ajv.validate(schema.toJSON(), data);
+         return ajv.validate(schema, data);
       },
    },
    {
       name: "json-schema-library",
+      prepare: (schema) => {
+         return schema.toJSON();
+      },
       validate: (schema, data) => {
-         return compileSchema(schema.toJSON()).validate(data).valid;
+         return compileSchema(schema).validate(data).valid;
       },
    },
    {
       name: "jsonv-ts",
+      prepare: (schema) => {
+         return schema;
+      },
       validate: (schema, data) => {
          return schema.validate(data).valid;
       },
    },
-] as const;
+];
