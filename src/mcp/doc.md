@@ -3,9 +3,9 @@ Requests:
 -  [x] initialize
 -  [x] ping
 -  [ ] paginate
--  [ ] list resources
--  [ ] list resource templates
--  [ ] read resource
+-  [x] list resources
+-  [x] list resource templates
+-  [x] read resource
 -  [ ] subscribe
 -  [ ] list prompts
 -  [ ] get prompt
@@ -23,7 +23,7 @@ Notifications:
 -  [ ] client
 -  [ ] cancelled
 -  [ ] resource update
--  [ ] initialized
+-  [x] initialized
 -  [ ] logging message
 -  [ ] tool list changed
 -  [ ] roots list changed

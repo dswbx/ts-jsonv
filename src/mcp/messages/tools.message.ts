@@ -35,7 +35,10 @@ export class ToolsCallMessage extends RpcMessage {
       }
 
       try {
-         const result = await tool.call(message.params.arguments);
+         const result = await tool.call(
+            message.params.arguments,
+            this.server.context
+         );
          return this.formatRespond(message, {
             content: Array.isArray(result) ? result : [result],
          });

@@ -1,18 +1,12 @@
-import type {
-   Context,
-   Env,
-   Input,
-   MiddlewareHandler,
-   Next,
-   ValidationTargets,
-} from "hono";
+import type { Context, MiddlewareHandler, Next } from "hono";
 import { McpServer, type McpServerInfo } from "./server";
 import type { Tool } from "./tool";
-import { mergeObject } from "../lib/utils";
 import crypto from "crypto";
+import type { Resource } from "./resource";
 
 interface McpServerInit {
-   tools?: Tool<any, any>[];
+   tools?: Tool<any, any, any | never>[];
+   resources?: Resource<any, any, any | never>[];
    context?: object;
 }
 
@@ -23,7 +17,7 @@ interface McpOptionsBase {
       enableHistoryEndpoint?: boolean;
    };
    endpoint?: {
-      transport?: "sse";
+      transport?: "streamableHttp";
       path: `/${string}`;
    };
 }
@@ -79,6 +73,10 @@ export const mcp = (opts: McpOptions): MiddlewareHandler => {
 
             for (const tool of ctx.tools ?? []) {
                server.registerTool(tool);
+            }
+
+            for (const resource of ctx.resources ?? []) {
+               server.registerResource(resource);
             }
 
             if (opts.sessionsEnabled) {

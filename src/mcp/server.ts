@@ -1,15 +1,11 @@
 import type { Context as HonoContext } from "hono";
 import * as messages from "./messages";
-import type {
-   RpcMessage,
-   TRpcId,
-   TRpcMessage,
-   TRpcRequest,
-   TRpcResponse,
-} from "./rpc";
+import type { RpcMessage, TRpcId, TRpcRequest, TRpcResponse } from "./rpc";
 import * as s from "../lib";
 import type { Tool } from "./tool";
 import { McpError } from "./error";
+import type { TResourceUri } from "./resource";
+import type { Resource } from "./resource";
 
 const serverInfoSchema = s.object({
    name: s.string(),
@@ -29,9 +25,10 @@ export class McpServer<ServerContext extends object = {}> {
       }
    > = new Map();
    tools: Tool<string, s.TSchema>[] = [];
+   resources: Resource<string, TResourceUri>[] = [];
 
    constructor(
-      protected readonly context: ServerContext = {} as ServerContext,
+      readonly context: ServerContext = {} as ServerContext,
       readonly serverInfo: s.Static<typeof serverInfoSchema> = {
          name: "mcp-server",
          version: "0.0.0",
@@ -44,6 +41,10 @@ export class McpServer<ServerContext extends object = {}> {
 
    registerTool(tool: Tool<any, any>) {
       this.tools.push(tool);
+   }
+
+   registerResource(resource: Resource<any, any>) {
+      this.resources.push(resource);
    }
 
    get console() {

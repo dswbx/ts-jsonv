@@ -20,7 +20,8 @@ export class InitializeMessage extends RpcMessage {
       return this.formatRespond(message, {
          protocolVersion: this.server.version,
          capabilities: {
-            tools: {},
+            tools: this.server.tools.length > 0 ? {} : undefined,
+            resources: this.server.resources.length > 0 ? {} : undefined,
          },
          serverInfo: this.server.serverInfo,
       });

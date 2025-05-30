@@ -38,6 +38,7 @@ export type ToolAnnotation = s.Static<typeof annotationSchema>;
 type ToolHandlerCtx = {
    text: (text: string) => any;
    json: (json: object) => any;
+   context: object;
 };
 
 type ToolResponse = {
@@ -47,11 +48,14 @@ type ToolResponse = {
 export class Tool<
    Name extends string = string,
    Schema extends s.TSchema | undefined = undefined,
-   Params = Schema extends s.TSchema ? s.Static<Schema> : never
+   Params = Schema extends s.TSchema ? s.Static<Schema> : object
 > {
    constructor(
       readonly name: Name,
-      readonly handler: (params: Params, ctx: ToolHandlerCtx) => Promise<any>,
+      readonly handler: (
+         params: Params,
+         ctx: ToolHandlerCtx
+      ) => Promise<ToolResponse>,
       readonly schema: Schema,
       readonly options: {
          description?: string;
@@ -63,7 +67,7 @@ export class Tool<
       }
    }
 
-   async call(params: Params): Promise<ToolResponse> {
+   async call(params: Params, context: object): Promise<ToolResponse> {
       if (this.schema) {
          const result = this.schema.validate(params);
          if (!result.valid) {
@@ -75,6 +79,7 @@ export class Tool<
       }
 
       return await this.handler(params, {
+         context,
          text: (text) => ({
             type: "text",
             text,
@@ -92,7 +97,8 @@ export class Tool<
          name: this.name,
          description,
          inputSchema: this.schema?.toJSON(),
-         annotations,
+         annotations:
+            Object.keys(annotations).length > 0 ? annotations : undefined,
       };
    }
 }
