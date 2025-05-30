@@ -136,10 +136,12 @@ describe("object", () => {
    });
 
    test("record", () => {
-      const schema = record({
-         name: string(),
-         age: number().optional(),
-      });
+      const schema = record(
+         object({
+            name: string(),
+            age: number().optional(),
+         })
+      );
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{
          [key: string]: { name: string; age?: number };
@@ -157,10 +159,12 @@ describe("object", () => {
       {
          // in union
          const schema = anyOf([
-            record({
-               name: string(),
-               age: number().optional(),
-            }),
+            record(
+               object({
+                  name: string(),
+                  age: number().optional(),
+               })
+            ),
             string(),
          ]);
          type Inferred = Static<typeof schema>;
@@ -170,6 +174,15 @@ describe("object", () => {
               }
             | string
          >();
+      }
+
+      {
+         // any
+         const schema = record(any());
+         type Inferred = Static<typeof schema>;
+         expectTypeOf<Inferred>().toEqualTypeOf<{
+            [key: string]: any;
+         }>();
       }
    });
 

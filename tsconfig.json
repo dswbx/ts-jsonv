@@ -18,6 +18,7 @@
       "noUnusedLocals": false,
       "noUnusedParameters": false,
       "noPropertyAccessFromIndexSignature": false,
+      "noImplicitOverride": true,
       "paths": {
          "jsonv-ts": ["./src/lib/index.ts"]
       }
