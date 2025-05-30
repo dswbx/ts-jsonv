@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { McpServer } from "./server";
-import { Tool } from "./tool";
+import { Tool, tool } from "./tool";
 import * as s from "../lib";
 import { mcp } from "./middleware";
-import { Resource } from "./resource";
+import { resource, Resource } from "./resource";
 
 const test = new Tool(
    "test",
@@ -18,6 +18,17 @@ const test = new Tool(
       age: s.number().optional(),
    })
 );
+
+const test2 = tool({
+   name: "test2",
+   schema: s.object({
+      name: s.string(),
+      age: s.number().optional(),
+   }),
+   handler: async (params, c) => {
+      return c.text(`Hello, ${params.name}! Age: ${params.age ?? "unknown"}`);
+   },
+});
 
 const context = new Tool(
    "context",
@@ -42,6 +53,15 @@ const staticResource = new Resource(
       };
    }
 );
+const staticResource2 = resource({
+   name: "static2",
+   uri: "users://123/profile",
+   handler: async () => {
+      return {
+         text: "hello world",
+      };
+   },
+});
 
 const dynamicResource = new Resource(
    "dynamic",
@@ -53,14 +73,29 @@ const dynamicResource = new Resource(
       };
    }
 );
+const dynamicResource2 = resource({
+   name: "dynamic2",
+   uri: "users://{username}/profile",
+   handler: async ({ username }) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return {
+         text: `hello ${username}`,
+      };
+   },
+});
 
 const app = new Hono().use(
    mcp({
       context: {
          random: "bla bla",
       },
-      tools: [test, context],
-      resources: [staticResource, dynamicResource],
+      tools: [test, test2, context],
+      resources: [
+         staticResource,
+         staticResource2,
+         dynamicResource,
+         dynamicResource2,
+      ],
    })
 );
 

@@ -62,7 +62,7 @@ export class Tool<
       } & ToolAnnotation = {}
    ) {
       const { description, ...annotations } = options;
-      if (!annotationSchema.validate(annotations).valid) {
+      if (annotations && !annotationSchema.validate(annotations).valid) {
          throw new Error("Invalid tool annotation");
       }
    }
@@ -96,9 +96,28 @@ export class Tool<
       return {
          name: this.name,
          description,
-         inputSchema: this.schema?.toJSON(),
+         inputSchema: this.schema?.toJSON() ?? s.object({}),
          annotations:
             Object.keys(annotations).length > 0 ? annotations : undefined,
       };
    }
+}
+
+export function tool<
+   Name extends string = string,
+   Schema extends s.TSchema | undefined = undefined,
+   Params = Schema extends s.TSchema ? s.Static<Schema> : object
+>(
+   opts: {
+      name: Name;
+      handler: (params: Params, ctx: ToolHandlerCtx) => Promise<ToolResponse>;
+      schema?: Schema;
+      description?: string;
+   } & ToolAnnotation
+) {
+   const { name, handler, schema, description, ...annotations } = opts;
+   return new Tool(name, handler, schema ?? undefined, {
+      description,
+      ...annotations,
+   });
 }

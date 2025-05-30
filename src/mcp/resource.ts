@@ -86,3 +86,16 @@ export class Resource<
       };
    }
 }
+
+export function resource<
+   Name extends string = string,
+   Uri extends TResourceUri = TResourceUri,
+   Params = Uri extends TResourceUri ? ExtractParams<Uri> : never
+>(opts: {
+   name: Name;
+   uri: Uri;
+   handler: (params: Params, context: object) => Promise<ResourceResponse>;
+}) {
+   const { name, uri, handler, ...options } = opts;
+   return new Resource(name, uri, handler, options);
+}

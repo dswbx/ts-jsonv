@@ -37,7 +37,6 @@
    },
    "devDependencies": {
       "@cfworker/json-schema": "^4.1.1",
-      "@modelcontextprotocol/sdk": "^1.12.0",
       "@types/bun": "latest",
       "ajv": "^8.17.1",
       "bun-types": "^1.2.9",

@@ -116,7 +116,7 @@ export class McpServer<ServerContext extends object = {}> {
 
          throw new McpError("InvalidRequest");
       } catch (e) {
-         this.console.error(String(e));
+         this.console.error(e);
          if (e instanceof McpError) {
             return c.json(e.setId(this.currentId).toJSON(), e.statusCode);
          }

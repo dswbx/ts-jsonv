@@ -9,3 +9,4 @@ export {
    ResourcesTemplatesListMessage,
    ResourcesReadMessage,
 } from "./resources.message";
+export { CompletionMessage } from "./completion.message";
