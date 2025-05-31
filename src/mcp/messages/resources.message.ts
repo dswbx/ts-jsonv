@@ -1,6 +1,6 @@
 import * as s from "jsonv-ts";
 import { McpError } from "../error";
-import { RpcMessage, type TRpcRequest, type TRpcRequestP } from "../rpc";
+import { RpcMessage, type TRpcRequest } from "../rpc";
 
 export class ResourcesListMessage extends RpcMessage {
    method = "resources/list";
@@ -38,9 +38,9 @@ export class ResourcesReadMessage extends RpcMessage {
       uri: s.string(),
    });
 
-   override async respond(message: TRpcRequest) {
-      const uri = message.params?.uri;
-      const resource = this.server.resources.find((r) => r.matches(uri));
+   override async respond(message: TRpcRequest<typeof this.params>) {
+      const uri = message.params.uri;
+      const resource = this.server.resources.find((r) => r.matches(uri as any));
       if (!resource) {
          throw new McpError("MethodNotFound", `Resource not found: ${uri}`);
       }
@@ -49,7 +49,7 @@ export class ResourcesReadMessage extends RpcMessage {
          contents: [
             await resource.toJSONContent(
                this.server.context,
-               message.params?.uri
+               message.params.uri as any
             ),
          ],
       });

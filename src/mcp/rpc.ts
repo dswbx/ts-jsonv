@@ -2,7 +2,7 @@ import * as s from "jsonv-ts";
 import { McpError } from "./error";
 import type { McpServer } from "./server";
 
-const anyObject = s.record(s.any());
+const anyObject = s.object({});
 
 const rpcBase = s.object({
    jsonrpc: s.string({ const: "2.0" }),
@@ -12,7 +12,7 @@ const rpcBase = s.object({
 const rpcRequest = s.object({
    ...rpcBase.properties,
    method: s.string(),
-   params: anyObject.optional(),
+   params: s.any().optional(),
 });
 
 const rpcResponse = s.object({
@@ -21,12 +21,14 @@ const rpcResponse = s.object({
    error: s.object({}).optional(),
 });
 
-export type TRpcRequest = s.Static<typeof rpcRequest>;
-export type TRpcRequestP<S extends s.TSchema> = Omit<TRpcRequest, "params"> & {
-   params: s.Static<S>;
-};
+export type TRpcRawRequest = s.Static<typeof rpcRequest>;
+export interface TRpcRequest<S extends s.TAnySchema | unknown = unknown>
+   extends Omit<TRpcRawRequest, "params"> {
+   params: S extends s.TAnySchema ? s.Static<S> : S;
+}
+
 export type TRpcResponse = s.Static<typeof rpcResponse>;
-export type TRpcMessage = TRpcRequest | TRpcResponse;
+export type TRpcMessage = TRpcRawRequest | TRpcResponse;
 export type TRpcId = string | number;
 
 export abstract class RpcMessage<
@@ -38,7 +40,7 @@ export abstract class RpcMessage<
 
    constructor(protected readonly server: McpServer) {}
 
-   is(message: TRpcRequest) {
+   is(message: TRpcRawRequest) {
       if (message.jsonrpc !== "2.0") {
          throw new McpError(
             "InvalidRequest",
@@ -61,7 +63,9 @@ export abstract class RpcMessage<
       return true;
    }
 
-   abstract respond(message: TRpcRequest): Promise<TRpcResponse>;
+   abstract respond(
+      message: TRpcRequest | TRpcRawRequest
+   ): Promise<TRpcResponse>;
 
    protected formatRespond(
       message: TRpcRequest,

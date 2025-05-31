@@ -1,6 +1,6 @@
 import * as s from "jsonv-ts";
 import { McpError } from "../error";
-import { RpcMessage, type TRpcRequest, type TRpcRequestP } from "../rpc";
+import { RpcMessage, type TRpcRequest } from "../rpc";
 
 export class ToolsListMessage extends RpcMessage {
    method = "tools/list";
@@ -15,12 +15,12 @@ export class ToolsListMessage extends RpcMessage {
 
 export class ToolsCallMessage extends RpcMessage {
    method = "tools/call";
-   params = s.object({
+   params = s.strictObject({
       name: s.string(),
       arguments: s.record(s.any()).optional(),
    });
 
-   override async respond(message: TRpcRequestP<typeof this.params>) {
+   override async respond(message: TRpcRequest<typeof this.params>) {
       const tool = this.server.tools.find(
          (t) => t.name === message.params.name
       );

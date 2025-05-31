@@ -1,6 +1,12 @@
 import type { Context as HonoContext } from "hono";
 import * as messages from "./messages";
-import type { RpcMessage, TRpcId, TRpcRequest, TRpcResponse } from "./rpc";
+import type {
+   RpcMessage,
+   TRpcId,
+   TRpcRawRequest,
+   TRpcRequest,
+   TRpcResponse,
+} from "./rpc";
 import * as s from "jsonv-ts";
 import { tool, type Tool, type ToolFactoryProps } from "./tool";
 import { McpError } from "./error";
@@ -19,7 +25,7 @@ export class McpServer<ServerContext extends object = {}> {
    readonly history: Map<
       TRpcId,
       {
-         request: TRpcRequest;
+         request: TRpcRawRequest;
          response?: TRpcResponse;
       }
    > = new Map();
@@ -72,9 +78,9 @@ export class McpServer<ServerContext extends object = {}> {
          const method = request.method;
 
          if (method === "POST") {
-            let body: TRpcRequest | undefined;
+            let body: TRpcRawRequest | undefined;
             try {
-               body = (await request.json()) as TRpcRequest;
+               body = (await request.json()) as TRpcRawRequest;
                this.currentId = body.id;
             } catch (e) {
                this.console.error(e);

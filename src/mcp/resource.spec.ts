@@ -79,7 +79,6 @@ describe("resource", () => {
             name: "users",
             mimeType: "text/plain",
             description: undefined,
-            text: "hello",
          });
       }
    });
