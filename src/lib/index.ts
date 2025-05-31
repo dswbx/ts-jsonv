@@ -44,3 +44,4 @@ export type {
 export { error, type ErrorDetail, valid, makeOpts } from "./utils/details";
 export { $kind, $raw, $optional } from "./symbols";
 export { type CoercionOptions } from "./validation/coerce";
+export { type ParseOptions, parse, ParseError } from "./validation/parse";

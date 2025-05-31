@@ -1,6 +1,6 @@
 {
    "compilerOptions": {
-      "lib": ["esnext"],
+      "lib": ["esnext", "dom"],
       "target": "ESNext",
       "module": "ESNext",
       "moduleDetection": "force",
@@ -18,6 +18,9 @@
       "noUnusedLocals": false,
       "noUnusedParameters": false,
       "noPropertyAccessFromIndexSignature": false,
+      "noImplicitOverride": true,
+      "declaration": true,
+      "outDir": "./dist",
       "paths": {
          "jsonv-ts": ["./src/lib/index.ts"]
       }
