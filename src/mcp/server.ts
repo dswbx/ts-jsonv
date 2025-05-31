@@ -1,11 +1,10 @@
 import type { Context as HonoContext } from "hono";
 import * as messages from "./messages";
 import type { RpcMessage, TRpcId, TRpcRequest, TRpcResponse } from "./rpc";
-import * as s from "../lib";
-import type { Tool } from "./tool";
+import * as s from "jsonv-ts";
+import { tool, type Tool, type ToolFactoryProps } from "./tool";
 import { McpError } from "./error";
-import type { TResourceUri } from "./resource";
-import type { Resource } from "./resource";
+import { resource, type TResourceUri, type Resource } from "./resource";
 
 const serverInfoSchema = s.object({
    name: s.string(),
@@ -28,11 +27,11 @@ export class McpServer<ServerContext extends object = {}> {
    resources: Resource<string, TResourceUri>[] = [];
 
    constructor(
-      readonly context: ServerContext = {} as ServerContext,
       readonly serverInfo: s.Static<typeof serverInfoSchema> = {
          name: "mcp-server",
          version: "0.0.0",
-      }
+      },
+      readonly context: ServerContext = {} as ServerContext
    ) {
       this.messages = Object.values(messages).map(
          (Message) => new Message(this)
@@ -43,8 +42,20 @@ export class McpServer<ServerContext extends object = {}> {
       this.tools.push(tool);
    }
 
+   tool<Schema extends s.TSchema | undefined = undefined>(
+      opts: ToolFactoryProps<string, Schema, ServerContext>
+   ) {
+      this.registerTool(tool(opts as any));
+      return this;
+   }
+
    registerResource(resource: Resource<any, any>) {
       this.resources.push(resource);
+   }
+
+   resource(...args: Parameters<typeof resource>) {
+      this.registerResource(resource(...args));
+      return this;
    }
 
    get console() {
@@ -112,9 +123,7 @@ export class McpServer<ServerContext extends object = {}> {
             });
          }
 
-         console.log("invalid request", method, request);
-
-         throw new McpError("InvalidRequest");
+         return c.json("Method not allowed", 405);
       } catch (e) {
          this.console.error(e);
          if (e instanceof McpError) {

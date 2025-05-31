@@ -1,16 +1,15 @@
 import type { Context, MiddlewareHandler, Next } from "hono";
 import { McpServer, type McpServerInfo } from "./server";
 import type { Tool } from "./tool";
-import crypto from "crypto";
 import type { Resource } from "./resource";
 
-interface McpServerInit {
+export interface McpServerInit {
    tools?: Tool<any, any, any | never>[];
    resources?: Resource<any, any, any | never>[];
    context?: object;
 }
 
-interface McpOptionsBase {
+export interface McpOptionsBase {
    serverInfo?: McpServerInfo;
    sessionsEnabled?: boolean;
    debug?: {
@@ -69,7 +68,7 @@ export const mcp = (opts: McpOptions): MiddlewareHandler => {
             console.log("creating server");
             const ctx =
                "setup" in opts && opts.setup ? await opts.setup(c) : opts;
-            server = new McpServer(ctx?.context ?? {}, opts.serverInfo);
+            server = new McpServer(opts.serverInfo, ctx?.context ?? {});
 
             for (const tool of ctx.tools ?? []) {
                server.registerTool(tool);

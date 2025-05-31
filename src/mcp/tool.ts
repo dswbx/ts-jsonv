@@ -1,4 +1,4 @@
-import * as s from "../lib";
+import * as s from "jsonv-ts";
 import { McpError } from "./error";
 
 const annotationSchema = s.partialObject({
@@ -35,13 +35,13 @@ const annotationSchema = s.partialObject({
 
 export type ToolAnnotation = s.Static<typeof annotationSchema>;
 
-type ToolHandlerCtx = {
+export type ToolHandlerCtx<Context extends object = object> = {
    text: (text: string) => any;
    json: (json: object) => any;
-   context: object;
+   context: Context;
 };
 
-type ToolResponse = {
+export type ToolResponse = {
    type: string;
 };
 
@@ -103,18 +103,25 @@ export class Tool<
    }
 }
 
-export function tool<
+export type ToolFactoryProps<
    Name extends string = string,
    Schema extends s.TSchema | undefined = undefined,
+   Context extends object = {},
    Params = Schema extends s.TSchema ? s.Static<Schema> : object
->(
-   opts: {
-      name: Name;
-      handler: (params: Params, ctx: ToolHandlerCtx) => Promise<ToolResponse>;
-      schema?: Schema;
-      description?: string;
-   } & ToolAnnotation
-) {
+> = {
+   name: Name;
+   handler: (
+      params: Params,
+      ctx: ToolHandlerCtx<Context>
+   ) => Promise<ToolResponse>;
+   schema?: Schema;
+   description?: string;
+} & ToolAnnotation;
+
+export function tool<
+   Name extends string = string,
+   Schema extends s.TSchema | undefined = undefined
+>(opts: ToolFactoryProps<Name, Schema, object>) {
    const { name, handler, schema, description, ...annotations } = opts;
    return new Tool(name, handler, schema ?? undefined, {
       description,

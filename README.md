@@ -1,5 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/jsonv-ts.svg)](https://npmjs.org/package/jsonv-ts)
 ![gzipped size of jsonv-ts](https://img.badgesize.io/https://unpkg.com/jsonv-ts@latest/dist/lib/index.js?compression=gzip&label=jsonv-ts)
+![gzipped size of jsonv-ts/hono](https://img.badgesize.io/https://unpkg.com/jsonv-ts@latest/dist/hono/index.js?compression=gzip&label=jsonv-ts/hono)
 
 # jsonv-ts: JSON Schema Builder and Validator for TypeScript
 
@@ -42,7 +43,8 @@ A simple, lightweight (<6kb gzipped) and dependency-free TypeScript library for 
 -  Type-safe JSON schema definition in TypeScript.
 -  Static type inference from schemas using the `Static` helper.
 -  Support for standard JSON schema types and keywords.
--  Simple API for schema construction.
+-  Hono integration for validation and OpenAPI generation.
+-  MCP server implementation.
 
 ## Installation
 
@@ -431,38 +433,6 @@ Currently unsupported, but planned:
 -  [ ] `contentMediaType`, `contentSchema` and `contentEncoding`
 -  [ ] meta schemas and `vocabulary`
 -  [ ] Additional optional formats: `idn-email`, `idn-hostname`, `iri`, `iri-reference`
-
-Benchmark results (simple schemas):
-
-```sh
-clk: ~3.13 GHz
-cpu: Apple M1 Max
-runtime: bun 1.2.14 (arm64-darwin)
-
-benchmark                   avg (min … max) p75 / p99    (min … top 1%)
-------------------------------------------- -------------------------------
-@cfworker/json-schema          5.30 µs/iter   5.08 µs  █
-                      (4.42 µs … 523.92 µs)  10.92 µs  █▄
-                    (  0.00  b … 272.00 kb) 339.01  b ▄██▄▂▂▁▁▁▁▁▁▁▁▁▁▁▂▂▁▁
-
-ajv (jit)                     14.36 ms/iter  15.24 ms  ▃▃▃▃██
-                      (12.51 ms … 17.44 ms)  17.44 ms  ██████  ▂▂▂  ▂▇
-                    (  0.00  b …   4.92 mb) 813.71 kb ▆██████▆▁███▁▆██▆▁▆▆▆
-
-json-schema-library           60.83 µs/iter  61.50 µs  █
-                     (53.75 µs … 750.21 µs)  89.58 µs  ██▇▂
-                    (  0.00  b …  32.00 kb) 978.85  b ▂████▇▅▄▃▂▂▂▁▁▁▁▁▁▁▁▁
-
-jsonv-ts                      23.33 µs/iter  22.13 µs  █
-                     (19.75 µs … 840.25 µs)  44.58 µs  █▂
-                    (  0.00  b … 112.00 kb) 553.67  b ▂██▃▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
-
-summary
-  @cfworker/json-schema
-   4.4x faster than jsonv-ts
-   11.48x faster than json-schema-library
-   2709.82x faster than ajv (jit)
-```
 
 ### Using `ajv`
 

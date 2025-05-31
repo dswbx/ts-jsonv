@@ -1,4 +1,4 @@
-import * as s from "../../lib";
+import * as s from "jsonv-ts";
 import { McpError } from "../error";
 import { RpcMessage, type TRpcRequest, type TRpcRequestP } from "../rpc";
 

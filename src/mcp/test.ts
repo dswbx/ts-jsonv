@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { McpServer } from "./server";
 import { Tool, tool } from "./tool";
-import * as s from "../lib";
+import * as s from "jsonv-ts";
 import { mcp } from "./middleware";
 import { resource, Resource } from "./resource";
 
@@ -99,8 +99,26 @@ const app = new Hono().use(
    })
 );
 
+const srv = new McpServer(
+   {
+      name: "mcp-test",
+      version: "0.0.1",
+   },
+   {
+      foo: "bar",
+   }
+).tool({
+   name: "test",
+   schema: s.object({
+      name: s.string(),
+   }),
+   handler: async (params, c) => {
+      return c.text(`Hello, ${c.context.foo}! ${params.name}`);
+   },
+});
+
 app.all("/mcp_test", async (c) => {
-   const server = new McpServer(c, {
+   const server = new McpServer({
       name: "mcp-test",
       version: "0.0.1",
    });

@@ -1,4 +1,4 @@
-import * as s from "../../lib";
+import * as s from "jsonv-ts";
 import { RpcMessage, type TRpcId, type TRpcRequest } from "../rpc";
 
 export class PingMessage extends RpcMessage {
