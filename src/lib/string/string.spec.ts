@@ -1,6 +1,6 @@
 import { expectTypeOf } from "expect-type";
 import { type Static, type StaticCoerced } from "../static";
-import { string, stringConst } from "./string";
+import { string } from "./string";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
 import { error, valid } from "../utils/details";
@@ -88,20 +88,6 @@ describe("string", () => {
       });
    });
 
-   test("stringConst", () => {
-      const schema = stringConst("hello", { $id: "test" });
-      type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<"hello">();
-
-      assertJson(schema, {
-         $id: "test",
-         type: "string",
-         const: "hello",
-         default: "hello",
-         readOnly: true,
-      });
-   });
-
    describe("validate", () => {
       test("base", () => {
          const schema = string();
@@ -111,14 +97,6 @@ describe("string", () => {
          expect(schema.validate(null).valid).toBe(false);
          expect(schema.validate({}).valid).toBe(false);
          expect(schema.validate([]).valid).toBe(false);
-      });
-
-      test("const", () => {
-         const schema = stringConst("hello");
-         expect(schema.validate("hello").valid).toBe(true);
-         expect(schema.validate("world").errors[0]?.keywordLocation).toEqual(
-            "/const"
-         );
       });
 
       test("enum", () => {

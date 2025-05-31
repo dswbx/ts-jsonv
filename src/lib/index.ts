@@ -5,8 +5,8 @@ export {
    type TSchemaFn,
    type TSchemaInOut,
    schema,
-   any,
 } from "./schema";
+export { any, type TAny, literal, type TLiteral } from "./schema/misc";
 export type { Static, StaticConstEnum, StaticCoerced } from "./static";
 export {
    object,
@@ -19,12 +19,7 @@ export {
    type TPartialObject,
    strictObject,
 } from "./object/object";
-export {
-   string,
-   stringConst,
-   type TString,
-   type StringSchema,
-} from "./string/string";
+export { string, type TString, type StringSchema } from "./string/string";
 export {
    number,
    type TNumber,

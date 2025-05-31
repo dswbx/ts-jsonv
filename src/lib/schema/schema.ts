@@ -1,14 +1,14 @@
-import { $kind, $optional, $raw } from "./symbols";
-import type { Static, StaticCoerced, StaticConstEnum } from "./static";
-import { isBoolean, isObject } from "./utils";
-import { validate } from "./validation/validate";
+import { $kind, $optional, $raw } from "../symbols";
+import type { Static, StaticCoerced, StaticConstEnum } from "../static";
+import { isBoolean, isObject } from "../utils";
+import { validate } from "../validation/validate";
 import type {
    ValidationResult,
    ValidationOptions,
-} from "./validation/validate";
-import { error, valid } from "./utils/details";
-import { coerce, type CoercionOptions } from "./validation/coerce";
-import { Resolver } from "./validation/resolver";
+} from "../validation/validate";
+import { error, valid } from "../utils/details";
+import { coerce, type CoercionOptions } from "../validation/coerce";
+import { Resolver } from "../validation/resolver";
 
 export type PropertyName = string;
 export type JSONSchemaTypeName =
@@ -244,17 +244,4 @@ export const schema = <
    };
 
    return s2 as any;
-};
-
-export type TAny<O extends TSchemaBase = TSchemaBase> = TCustomSchema<
-   O,
-   any
-> & {
-   static: any;
-};
-
-export const any = <O extends TSchema>(
-   options: Partial<O> = {} as Partial<O>
-): TAny<O> => {
-   return schema(options as O, "any") as any;
 };
