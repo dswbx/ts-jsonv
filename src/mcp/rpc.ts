@@ -22,7 +22,7 @@ const rpcResponse = s.object({
 });
 
 export type TRpcRequest = s.Static<typeof rpcRequest>;
-export type TRpcRequestP<S extends s.TSchema> = TRpcRequest & {
+export type TRpcRequestP<S extends s.TSchema> = Omit<TRpcRequest, "params"> & {
    params: s.Static<S>;
 };
 export type TRpcResponse = s.Static<typeof rpcResponse>;

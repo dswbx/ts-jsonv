@@ -19,12 +19,7 @@ export {
    type TPartialObject,
    strictObject,
 } from "./object/object";
-export {
-   string,
-   stringConst,
-   type TString,
-   type StringSchema,
-} from "./string/string";
+export { string, type TString, type StringSchema } from "./string/string";
 export {
    number,
    type TNumber,

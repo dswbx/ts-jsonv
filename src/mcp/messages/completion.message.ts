@@ -1,5 +1,5 @@
 import * as s from "jsonv-ts";
-import { RpcMessage, type TRpcRequest } from "../rpc";
+import { RpcMessage, type TRpcRequest, type TRpcRequestP } from "../rpc";
 
 // currently just a placeholder to prevent errors
 
@@ -12,17 +12,17 @@ export class CompletionMessage extends RpcMessage {
       }),
       ref: s.oneOf([
          s.object({
-            type: s.stringConst("ref/resource"),
+            type: s.string({ const: "ref/resource" }),
             uri: s.string(),
          }),
          s.object({
-            type: s.stringConst("ref/tool"),
+            type: s.string({ const: "ref/tool" }),
             name: s.string(),
          }),
       ]),
    });
 
-   override async respond(message: TRpcRequest) {
+   override async respond(message: TRpcRequestP<typeof this.params>) {
       return this.formatRespond(message, {
          completion: {
             values: [],

@@ -19,6 +19,8 @@
       "noUnusedParameters": false,
       "noPropertyAccessFromIndexSignature": false,
       "noImplicitOverride": true,
+      "declaration": true,
+      "outDir": "./dist",
       "paths": {
          "jsonv-ts": ["./src/lib/index.ts"]
       }
