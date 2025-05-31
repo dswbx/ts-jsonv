@@ -22,11 +22,10 @@ export type OptionalUndefined<
 // https://github.com/sindresorhus/type-fest/blob/main/source/simplify.d.ts
 export type Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {};
 
-export type Static<S extends TAnySchema> = S["static"] extends Record<
-   string,
-   unknown
->
-   ? Simplify<OptionalUndefined<S["static"]>>
+export type Static<S extends TAnySchema> = S["static"] extends {
+   [key: string]: any;
+}
+   ? Simplify<S["static"]>
    : S["static"];
 
 export type StaticCoerced<S extends TAnySchema> = S["coerce"] extends (

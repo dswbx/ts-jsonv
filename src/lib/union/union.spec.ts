@@ -33,6 +33,55 @@ describe("union", () => {
       });
    });
 
+   test("anyOf with objects", () => {
+      const one = object({
+         type: string({ const: "ref/resource" }),
+         uri: string().optional(),
+      });
+      type OneStatic = (typeof one)["static"];
+      //   ^?
+      type OneInferred = Static<typeof one>;
+      //   ^?
+
+      const aobj = array(object({ name: string() }));
+      type AobjStatic = (typeof aobj)["static"];
+      //   ^?
+      type AobjInferred = Static<typeof aobj>;
+      //   ^?
+
+      const schema = anyOf([
+         one,
+         object({
+            type: string({ const: "ref/tool" }),
+            name: string(),
+         }),
+      ]);
+      type AnyOfStatic = (typeof schema)["static"];
+      //   ^?
+      expectTypeOf<AnyOfStatic>().toEqualTypeOf<
+         | {
+              type: "ref/resource";
+              uri?: string;
+           }
+         | {
+              type: "ref/tool";
+              name: string;
+           }
+      >();
+      type AnyOfInferred = Static<typeof schema>;
+      //   ^?
+      expectTypeOf<AnyOfInferred>().toEqualTypeOf<
+         | {
+              type: "ref/resource";
+              uri?: string;
+           }
+         | {
+              type: "ref/tool";
+              name: string;
+           }
+      >();
+   });
+
    test("oneOf", () => {
       const schema = oneOf([string(), number()]);
       type Inferred = Static<typeof schema>;

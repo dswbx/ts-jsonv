@@ -17,12 +17,16 @@ import type { CoercionOptions } from "../validation/coerce";
 export type PropertyName = string;
 export type TProperties = { [key in PropertyName]: TSchema };
 
-type ObjectStatic<T extends TProperties> = {
-   [K in keyof T]: Static<T[K]>;
-};
-type ObjectCoerced<T extends TProperties> = {
-   [K in keyof T]: StaticCoerced<T[K]>;
-};
+type ObjectStatic<T extends TProperties> = Simplify<
+   OptionalUndefined<{
+      [K in keyof T]: Static<T[K]>;
+   }>
+>;
+type ObjectCoerced<T extends TProperties> = Simplify<
+   OptionalUndefined<{
+      [K in keyof T]: StaticCoerced<T[K]>;
+   }>
+>;
 
 export interface ObjectSchema extends Omit<Partial<TSchema>, "properties"> {
    patternProperties?: { [key: string]: TSchema };
@@ -84,11 +88,11 @@ export const strictObject = <
 };
 
 type PartialObjectStatic<T extends TProperties> = {
-   [K in keyof T]: Static<T[K]> | undefined;
+   [K in keyof T]?: Static<T[K]>;
 };
 
 type PartialObjectCoerced<T extends TProperties> = {
-   [K in keyof T]: StaticCoerced<T[K]> | undefined;
+   [K in keyof T]?: StaticCoerced<T[K]>;
 };
 
 export type TPartialObject<
@@ -119,31 +123,33 @@ export const partialObject = <
    return object(partial, options) as any;
 };
 
-type RecordStatic<T extends TProperties> = Record<string, Static<TObject<T>>>;
-
 export interface RecordSchema extends Partial<TSchema> {
    additionalProperties: never;
 }
 
-export type TRecord<P extends TProperties, O extends RecordSchema> = Omit<
-   TCustomSchema<O, RecordStatic<P>>,
+type RecordStatic<A extends TSchema> = Record<string, Static<A>>;
+
+export type TRecord<A extends TSchema, O extends RecordSchema> = Omit<
+   TCustomSchema<O, RecordStatic<A>>,
    "additionalProperties"
 > & {
-   additionalProperties: TObject<P>;
+   additionalProperties: A;
 };
 
-export const record = <P extends TProperties, const O extends RecordSchema>(
-   properties: P,
-   options: O = {} as O,
-   apOptions?: Omit<ObjectSchema, "properties" | "required">
-): TRecord<P, O> => {
+export const record = <
+   const S extends TSchema,
+   const O extends RecordSchema
+>(
+   ap: S,
+   options: O = {} as O
+): TRecord<S, O> => {
    return schema(
       {
          template,
          coerce,
          ...options,
          type: "object",
-         additionalProperties: object(properties, apOptions),
+         additionalProperties: ap,
       },
       "object"
    ) as any;

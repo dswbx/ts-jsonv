@@ -16,6 +16,26 @@ describe("object", () => {
       assertJson(object({}), { type: "object", properties: {} });
    });
 
+   test("types", () => {
+      const one = object({
+         type: string({ const: "ref/resource" }),
+         uri: string().optional(),
+      });
+      type OneStatic = (typeof one)["static"];
+      //   ^?
+      expectTypeOf<OneStatic>().toEqualTypeOf<{
+         type: "ref/resource";
+         uri?: string;
+      }>();
+
+      type OneInferred = Static<typeof one>;
+      //   ^?
+      expectTypeOf<OneInferred>().toEqualTypeOf<{
+         type: "ref/resource";
+         uri?: string;
+      }>();
+   });
+
    test("with properties", () => {
       const schema = object(
          {
@@ -136,10 +156,12 @@ describe("object", () => {
    });
 
    test("record", () => {
-      const schema = record({
-         name: string(),
-         age: number().optional(),
-      });
+      const schema = record(
+         object({
+            name: string(),
+            age: number().optional(),
+         })
+      );
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{
          [key: string]: { name: string; age?: number };
@@ -157,10 +179,12 @@ describe("object", () => {
       {
          // in union
          const schema = anyOf([
-            record({
-               name: string(),
-               age: number().optional(),
-            }),
+            record(
+               object({
+                  name: string(),
+                  age: number().optional(),
+               })
+            ),
             string(),
          ]);
          type Inferred = Static<typeof schema>;
@@ -170,6 +194,25 @@ describe("object", () => {
               }
             | string
          >();
+      }
+
+      {
+         // any
+         const inner = any();
+         type Inner = (typeof inner)["static"];
+         //   ^?
+         expectTypeOf<Inner>().toEqualTypeOf<any>();
+         type InnerStatic = Static<typeof inner>;
+         //   ^?
+         expectTypeOf<InnerStatic>().toEqualTypeOf<any>();
+
+         const schema = record(inner);
+         type Inferred = Static<typeof schema>;
+         //   ^?
+
+         expectTypeOf<Inferred>().toEqualTypeOf<{
+            [key: string]: any;
+         }>();
       }
    });
 
