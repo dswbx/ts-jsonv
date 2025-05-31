@@ -47,7 +47,7 @@ export interface TOptional<Schema extends TSchema = TSchema> extends TSchema {
    coerce: (v: unknown) => StaticCoerced<Schema> | undefined;
 }
 
-export interface TSchemaBase {
+export interface TJsonSchemaBaseOptions {
    // basic/meta
    $id?: string;
    $ref?: string;
@@ -57,14 +57,21 @@ export interface TSchemaBase {
    default?: any;
    readOnly?: boolean;
    writeOnly?: boolean;
-   $defs?: { [key in PropertyName]: TSchemaBase };
    $comment?: string;
    examples?: any[];
+   enum?: readonly any[] | any[];
+   const?: any;
+}
+
+export interface TCustomType
+   extends TJsonSchemaBaseOptions,
+      Partial<TSchemaFn> {}
+
+export interface TSchemaBase extends TJsonSchemaBaseOptions {
+   $defs?: { [key in PropertyName]: TSchemaBase };
 
    // data types & common
    type?: JSONSchemaTypeName | JSONSchemaTypeName[];
-   enum?: readonly any[] | any[];
-   const?: any;
 
    // string
    maxLength?: number;

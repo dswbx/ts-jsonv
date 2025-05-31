@@ -1,8 +1,8 @@
-import { schema, type TCustomSchema, type TSchema } from "../schema";
+import { schema, type TCustomSchema, type TCustomType } from "../schema";
 import type { Merge, Simplify } from "../static";
 import { isNumber } from "../utils";
 
-export interface StringSchema extends Partial<TSchema> {
+export interface StringSchema extends TCustomType {
    maxLength?: number;
    minLength?: number;
    pattern?: string;
@@ -17,11 +17,12 @@ export const string = <const S extends StringSchema = StringSchema>(
    schema(
       {
          template: () => "",
-         coerce: (value: unknown) => {
-            // only coerce numbers to strings
-            if (isNumber(value)) return String(value);
-            return value;
-         },
+         coerce:
+            (value: unknown) => {
+               // only coerce numbers to strings
+               if (isNumber(value)) return String(value);
+               return value;
+            },
          ...config,
          type: "string",
       },
