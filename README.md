@@ -5,7 +5,6 @@
 
 <!-- TOC depthfrom:2 updateonsave:true -->
 
--  [Overview](#overview)
 -  [Installation](#installation)
 -  [Example](#example)
 -  [Motivation](#motivation)
@@ -14,9 +13,14 @@
    -  [Numbers](#numbers)
    -  [Integers](#integers)
    -  [Booleans](#booleans)
+   -  [Literals](#literals)
    -  [Arrays](#arrays)
    -  [Objects](#objects)
+      -  [Strict Object](#strict-object)
+      -  [Partial Object](#partial-object)
+      -  [Record](#record)
    -  [Unions](#unions)
+   -  [Any](#any)
    -  [From Schema](#from-schema)
    -  [Custom Schemas](#custom-schemas)
 -  [Hono Integration](#hono-integration)
@@ -33,16 +37,14 @@
 
 <!-- /TOC -->
 
-## Overview
-
-A simple, lightweight (<6kb gzipped) and dependency-free TypeScript library for defining and validating JSON schemas with static type inference. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified. It has an integrated validator that can be used to validate instances against the latest JSON schema draft (2020-12).
+A simple, lightweight (~6kb gzipped) and dependency-free TypeScript library for defining and validating JSON schemas with static type inference. The schemas composed can be used with any JSON schema validator, it strips all metadata when being JSON stringified. It has an integrated validator that can be used to validate instances against the latest JSON schema draft (2020-12).
 
 `jsonv-ts` allows you to define JSON schemas using a TypeScript API. It provides functions for all standard JSON schema types (`object`, `string`, `number`, `array`, `boolean`) as well as common patterns like `optional` fields, union types (`anyOf`, `oneOf`, and `allOf`), and constants/enums. The `Static` type helper infers the corresponding TypeScript type directly from your schema definition.
 
 -  Type-safe JSON schema definition in TypeScript.
 -  Static type inference from schemas using the `Static` helper.
 -  Support for standard JSON schema types and keywords.
--  Simple API for schema construction.
+-  Hono integration for OpenAPI generation and request validation.
 
 ## Installation
 
@@ -185,9 +187,59 @@ const schema = s.boolean();
 type Active = s.Static<typeof schema>; // boolean
 ```
 
+### Literals
+
+The `literal` schema type defines a schema that only accepts a specific value. It's useful for defining constants or enums with a single value.
+
+```ts
+const schema = s.literal(1);
+// { const: 1 }
+
+type One = s.Static<typeof schema>; // 1
+```
+
+It can be used with all primitive types, arrays and objects:
+
+```ts
+// String literal
+const strSchema = s.literal("hello");
+type Hello = s.Static<typeof strSchema>; // "hello"
+
+// Number literal
+const numSchema = s.literal(42);
+type FortyTwo = s.Static<typeof numSchema>; // 42
+
+// Boolean literal
+const boolSchema = s.literal(true);
+type True = s.Static<typeof boolSchema>; // true
+
+// Null literal
+const nullSchema = s.literal(null);
+type Null = s.Static<typeof nullSchema>; // null
+
+// Undefined literal
+const undefSchema = s.literal(undefined);
+type Undefined = s.Static<typeof undefSchema>; // undefined
+
+// Object literal
+const objSchema = s.literal({ name: "hello" });
+type Obj = s.Static<typeof objSchema>; // { readonly name: "hello" }
+
+// Array literal
+const arrSchema = s.literal([1, "2", true]);
+type Arr = s.Static<typeof arrSchema>; // readonly [1, "2", true]
+```
+
+You can also add additional schema properties:
+
+```ts
+const schema = s.literal(1, { title: "number" });
+// { const: 1, title: "number" }
+```
+
 ### Arrays
 
-Defines an array type where all items must match the `items` schema. Optional `schema` can include `minItems`, `maxItems`, `uniqueItems`.
+Defines an array type where all items must match the `items` schema.
 
 ```ts
 const schema = s.array(s.string({ minLength: 1 }), { minItems: 1 });
@@ -198,7 +250,7 @@ type Tags = s.Static<typeof schema>; // string[]
 
 ### Objects
 
-Defines an object type with named `properties`. By default, all properties defined are required. Use `optional()` to mark properties as optional. Optional `schema` can include `required`, `additionalProperties`, `minProperties`, `maxProperties`.
+Defines an object type with named `properties`. By default, all properties defined are required. Use `optional()` to mark properties as optional.
 
 ```ts
 const schema = s.object({
@@ -224,8 +276,11 @@ type Product = s.Static<typeof schema>;
 //   name: string;
 //   price: number;
 //   description?: string | undefined;
+//   [key: string]: unknown;
 // }
 ```
+
+#### Strict Object
 
 You may also use the `s.strictObject()` function to create a strict object schema which sets `additionalProperties` to `false`.
 
@@ -244,6 +299,16 @@ const schema = s.strictObject({
 //   additionalProperties: false,
 // }
 
+type StrictProduct = s.Static<typeof schema>;
+// {
+//   productId: number;
+//   name: string;
+//   price: number;
+//   description?: string | undefined;
+// }
+//
+// note that `[key: string]: unknown` is not added to the type now
+
 // it's equivalent to:
 const schema = s.object(
    {
@@ -255,6 +320,52 @@ const schema = s.object(
    }
 );
 ```
+
+#### Partial Object
+
+The `partialObject` function creates an object schema where all properties are optional. This is useful when you want to make all properties of an object optional without having to call `.optional()` on each property individually.
+
+```ts
+const schema = s.partialObject({
+   name: s.string(),
+   age: s.number(),
+});
+// {
+//   type: "object",
+//   properties: {
+//     name: { type: "string" },
+//     age: { type: "number" }
+//   }
+// }
+
+type User = s.Static<typeof schema>;
+// { name?: string; age?: number; [key: string]: unknown }
+```
+
+You can also combine it with `additionalProperties: false` to create a strict partial object:
+
+```ts
+const schema = s.partialObject(
+   {
+      name: s.string(),
+      age: s.number(),
+   },
+   { additionalProperties: false }
+);
+// {
+//   type: "object",
+//   properties: {
+//     name: { type: "string" },
+//     age: { type: "number" }
+//   },
+//   additionalProperties: false
+// }
+
+type User = s.Static<typeof schema>;
+// { name?: string; age?: number }
+```
+
+#### Record
 
 Or for records, use `s.record()`.
 
@@ -268,7 +379,7 @@ const schema = s.record(s.string());
 // }
 
 type User = s.Static<typeof schema>;
-// { [key: string]: string }
+// { [key: string]: string; [key: string]: unknown }
 ```
 
 ### Unions
@@ -286,6 +397,32 @@ const schema = s.anyOf([s.string(), s.number()]);
 // { anyOf: [ { type: 'string' }, { type: 'number' } ] }
 
 type StringOrNumber = s.Static<typeof schema>; // string | number
+```
+
+### Any
+
+The `any` schema type allows any value to pass validation. It's useful when you need to accept any type of value in your schema.
+
+```ts
+const schema = s.any(); // {}
+type AnyValue = s.Static<typeof schema>; // any
+```
+
+It can be used in objects to allow any type for a property:
+
+```ts
+const schema = s.object({
+   name: s.any().optional(),
+});
+// {
+//   type: "object",
+//   properties: {
+//     name: {}
+//   }
+// }
+
+type User = s.Static<typeof schema>;
+// { name?: any }
 ```
 
 ### From Schema
@@ -424,45 +561,14 @@ const result = schema.validate({ id: 1, username: "valid_user" });
 -  Failed: 0 (0.00%)
 -  Optional failed: 54 (2.83%)
 
-Currently unsupported, but planned:
+Todo:
 
 -  [ ] `$ref` and `$defs`
 -  [ ] `unevaluatedItems` and `unevaluatedProperties`
 -  [ ] `contentMediaType`, `contentSchema` and `contentEncoding`
 -  [ ] meta schemas and `vocabulary`
 -  [ ] Additional optional formats: `idn-email`, `idn-hostname`, `iri`, `iri-reference`
-
-Benchmark results (simple schemas):
-
-```sh
-clk: ~3.13 GHz
-cpu: Apple M1 Max
-runtime: bun 1.2.14 (arm64-darwin)
-
-benchmark                   avg (min … max) p75 / p99    (min … top 1%)
-------------------------------------------- -------------------------------
-@cfworker/json-schema          5.30 µs/iter   5.08 µs  █
-                      (4.42 µs … 523.92 µs)  10.92 µs  █▄
-                    (  0.00  b … 272.00 kb) 339.01  b ▄██▄▂▂▁▁▁▁▁▁▁▁▁▁▁▂▂▁▁
-
-ajv (jit)                     14.36 ms/iter  15.24 ms  ▃▃▃▃██
-                      (12.51 ms … 17.44 ms)  17.44 ms  ██████  ▂▂▂  ▂▇
-                    (  0.00  b …   4.92 mb) 813.71 kb ▆██████▆▁███▁▆██▆▁▆▆▆
-
-json-schema-library           60.83 µs/iter  61.50 µs  █
-                     (53.75 µs … 750.21 µs)  89.58 µs  ██▇▂
-                    (  0.00  b …  32.00 kb) 978.85  b ▂████▇▅▄▃▂▂▂▁▁▁▁▁▁▁▁▁
-
-jsonv-ts                      23.33 µs/iter  22.13 µs  █
-                     (19.75 µs … 840.25 µs)  44.58 µs  █▂
-                    (  0.00  b … 112.00 kb) 553.67  b ▂██▃▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
-
-summary
-  @cfworker/json-schema
-   4.4x faster than jsonv-ts
-   11.48x faster than json-schema-library
-   2709.82x faster than ajv (jit)
-```
+-  [ ] Custom formats
 
 ### Using `ajv`
 

@@ -1,9 +1,8 @@
 import type {
    TAnySchema,
    TCustomSchema,
+   TCustomType,
    TSchema,
-   TSchemaBase,
-   TSchemaFn,
 } from "../schema";
 import { schema } from "../schema";
 import { fromSchema } from "../schema/from-schema";
@@ -31,7 +30,9 @@ type StaticUnionCoerced<T extends TAnySchema[]> = T extends [
       : never
    : never;
 
-export interface UnionSchema extends Partial<TSchema> {}
+export interface UnionSchema extends TCustomType {
+   $defs?: Record<string, TSchema>;
+}
 
 export type TAnyOf<
    T extends TAnySchema[],

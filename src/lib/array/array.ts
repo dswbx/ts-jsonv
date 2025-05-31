@@ -2,16 +2,18 @@ import {
    schema,
    type TAnySchema,
    type TCustomSchema,
+   type TCustomType,
    type TSchema,
 } from "../schema";
 import type { Static, StaticCoerced } from "../static";
-import { isSchema, invariant, isBoolean } from "../utils";
+import { isSchema, invariant } from "../utils";
 import type { CoercionOptions } from "../validation/coerce";
 
 type ArrayStatic<T extends TAnySchema> = Static<T>[] & {};
 type ArrayCoerced<T extends TAnySchema> = StaticCoerced<T>[] & {};
 
-export interface ArraySchema extends Omit<Partial<TSchema>, "items"> {
+export interface ArraySchema extends TCustomType {
+   $defs?: Record<string, TSchema>;
    contains?: TSchema;
    minContains?: number;
    maxContains?: number;
@@ -22,14 +24,17 @@ export interface ArraySchema extends Omit<Partial<TSchema>, "items"> {
 }
 
 export type TArray<
-   Items extends TSchema,
+   Items extends TAnySchema,
    O extends ArraySchema
 > = TCustomSchema<O, ArrayStatic<Items>> & {
    items: Items;
    coerce: (value: unknown) => ArrayCoerced<Items>;
 };
 
-export const array = <const Items extends TSchema, const O extends ArraySchema>(
+export const array = <
+   const Items extends TAnySchema,
+   const O extends ArraySchema
+>(
    items?: Items,
    options: O = {} as O
 ): TArray<Items, O> => {
