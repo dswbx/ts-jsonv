@@ -4,7 +4,7 @@ import { $kind } from "../symbols";
 import { allOf, anyOf, oneOf } from "./union";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, object, array, any, integer } from "../";
+import { string, number, object, array, any, integer, literal } from "../";
 
 describe("union", () => {
    test("anyOf", () => {
@@ -84,6 +84,39 @@ describe("union", () => {
               [key: string]: unknown;
            }
       >();
+   });
+
+   test("anyOf with objects and literals", () => {
+      const schema = anyOf([
+         literal("ref/resource"),
+         object({ type: string({ const: "ref/tool" }), name: string() }),
+         object({ type: literal("ref/another") }),
+      ]);
+      type Inferred = Static<typeof schema>;
+      expectTypeOf<Inferred>().toEqualTypeOf<
+         | "ref/resource"
+         | { type: "ref/tool"; name: string; [key: string]: unknown }
+         | { type: "ref/another"; [key: string]: unknown }
+      >();
+
+      assertJson(schema, {
+         anyOf: [
+            { const: "ref/resource" },
+            {
+               type: "object",
+               properties: {
+                  type: { const: "ref/tool", type: "string" },
+                  name: { type: "string" },
+               },
+               required: ["type", "name"],
+            },
+            {
+               type: "object",
+               properties: { type: { const: "ref/another" } },
+               required: ["type"],
+            },
+         ],
+      });
    });
 
    test("oneOf", () => {
