@@ -74,6 +74,7 @@ describe("ref", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<{
          limit: number | string;
          offset: number;
+         [key: string]: unknown;
       }>();
       type Coerced = StaticCoerced<typeof query>;
       expectTypeOf<Coerced>().toEqualTypeOf<{
@@ -187,6 +188,7 @@ describe("ref", () => {
          expectTypeOf<Inferred>().toEqualTypeOf<{
             id: string;
             nodes: unknown[];
+            [key: string]: unknown;
          }>();
          type Coerced = StaticCoerced<typeof s>;
          expectTypeOf<Coerced>().toEqualTypeOf<{
@@ -214,6 +216,7 @@ describe("ref", () => {
          expectTypeOf<Inferred>().toEqualTypeOf<{
             id?: string;
             nodes?: unknown;
+            [key: string]: unknown;
          }>();
          type Coerced = StaticCoerced<typeof s>;
          expectTypeOf<Coerced>().toEqualTypeOf<{

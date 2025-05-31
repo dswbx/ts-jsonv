@@ -98,6 +98,7 @@ describe("hono middleware", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<{
          url?: string;
          force: boolean;
+         [key: string]: unknown;
       }>();
       type Coerced = s.StaticCoerced<typeof schema>;
       //   ^?

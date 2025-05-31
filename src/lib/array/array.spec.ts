@@ -70,7 +70,7 @@ describe("array", () => {
       );
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<
-         { name?: string; age: number }[]
+         { name?: string; age: number; [key: string]: unknown }[]
       >();
 
       assertJson(schema, {

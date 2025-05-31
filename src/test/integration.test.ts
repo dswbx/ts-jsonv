@@ -36,6 +36,7 @@ describe("integration", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<{
          name: string | number;
          skills: boolean | ("a" | "b")[];
+         [key: string]: unknown;
       }>();
 
       assertJson(schema, {

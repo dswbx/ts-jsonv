@@ -1,7 +1,7 @@
-import { type TCustomSchema, type TSchema, schema } from "../schema";
+import { type TCustomSchema, type TCustomType, schema } from "../schema";
 import { isNumber, isString } from "../utils";
 
-export interface BooleanSchema extends Partial<TSchema> {}
+export interface BooleanSchema extends TCustomType {}
 
 export type TBoolean<O extends BooleanSchema> = TCustomSchema<O, boolean>;
 

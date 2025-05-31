@@ -12,7 +12,7 @@ describe("object", () => {
       const schema = object({});
 
       type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<{}>();
+      expectTypeOf<Inferred>().toEqualTypeOf<{ [key: string]: unknown }>();
       assertJson(object({}), { type: "object", properties: {} });
    });
 
@@ -26,6 +26,7 @@ describe("object", () => {
       expectTypeOf<OneStatic>().toEqualTypeOf<{
          type: "ref/resource";
          uri?: string;
+         [key: string]: unknown;
       }>();
 
       type OneInferred = Static<typeof one>;
@@ -33,7 +34,33 @@ describe("object", () => {
       expectTypeOf<OneInferred>().toEqualTypeOf<{
          type: "ref/resource";
          uri?: string;
+         [key: string]: unknown;
       }>();
+
+      {
+         // with additionalProperties false
+         const schema = object(
+            {
+               name: string(),
+               age: number(),
+            },
+            { additionalProperties: false }
+         );
+         type Inferred = Static<typeof schema>;
+         expectTypeOf<Inferred>().toEqualTypeOf<{
+            name: string;
+            age: number;
+         }>();
+         assertJson(schema, {
+            type: "object",
+            properties: {
+               name: { type: "string" },
+               age: { type: "number" },
+            },
+            required: ["name", "age"],
+            additionalProperties: false,
+         });
+      }
    });
 
    test("with properties", () => {
@@ -48,7 +75,11 @@ describe("object", () => {
       );
 
       type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<{ name: string; age?: number }>();
+      expectTypeOf<Inferred>().toEqualTypeOf<{
+         name: string;
+         age?: number;
+         [key: string]: unknown;
+      }>();
       expectTypeOf<
          Static<(typeof schema)["properties"]["name"]>
       >().toEqualTypeOf<string>();
@@ -73,7 +104,10 @@ describe("object", () => {
          age: number(),
       });
       type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<{ name: string; age: number }>();
+      expectTypeOf<Inferred>().toEqualTypeOf<{
+         name: string;
+         age: number;
+      }>();
 
       assertJson(schema, {
          type: "object",
@@ -92,7 +126,11 @@ describe("object", () => {
          age: number(),
       });
       type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<{ name?: string; age?: number }>();
+      expectTypeOf<Inferred>().toEqualTypeOf<{
+         name?: string;
+         age?: number;
+         [key: string]: unknown;
+      }>();
 
       assertJson(schema, {
          type: "object",
@@ -101,6 +139,30 @@ describe("object", () => {
             age: { type: "number" },
          },
       });
+
+      {
+         // partialObject with additionalProperties false
+         const schema = partialObject(
+            {
+               name: string(),
+               age: number(),
+            },
+            { additionalProperties: false }
+         );
+         type Inferred = Static<typeof schema>;
+         expectTypeOf<Inferred>().toEqualTypeOf<{
+            name?: string;
+            age?: number;
+         }>();
+         assertJson(schema, {
+            type: "object",
+            properties: {
+               name: { type: "string" },
+               age: { type: "number" },
+            },
+            additionalProperties: false,
+         });
+      }
    });
 
    test("objects of objects", () => {
@@ -114,9 +176,10 @@ describe("object", () => {
       });
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{
+         [key: string]: unknown;
          name: string;
          age: number;
-         address: { street: string; city: string };
+         address: { [key: string]: unknown; street: string; city: string };
       }>();
 
       assertJson(schema, {
@@ -143,7 +206,11 @@ describe("object", () => {
          age: number().optional(),
       });
       type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<{ name: string; age?: number }>();
+      expectTypeOf<Inferred>().toEqualTypeOf<{
+         name: string;
+         age?: number;
+         [key: string]: unknown;
+      }>();
 
       assertJson(schema, {
          type: "object",
@@ -156,6 +223,17 @@ describe("object", () => {
    });
 
    test("record", () => {
+      {
+         // simple
+         const simple = record(string());
+         type Simple = Static<typeof simple>;
+         expectTypeOf<Simple>().toEqualTypeOf<{ [key: string]: string }>();
+         assertJson(simple, {
+            type: "object",
+            additionalProperties: { type: "string" },
+         });
+      }
+
       const schema = record(
          object({
             name: string(),
@@ -164,7 +242,7 @@ describe("object", () => {
       );
       type Inferred = Static<typeof schema>;
       expectTypeOf<Inferred>().toEqualTypeOf<{
-         [key: string]: { name: string; age?: number };
+         [key: string]: { name: string; age?: number; [key: string]: unknown };
       }>();
 
       assertJson(schema, {
@@ -190,7 +268,11 @@ describe("object", () => {
          type Inferred = Static<typeof schema>;
          expectTypeOf<Inferred>().toEqualTypeOf<
             | {
-                 [key: string]: { name: string; age?: number };
+                 [key: string]: {
+                    name: string;
+                    age?: number;
+                    [key: string]: unknown;
+                 };
               }
             | string
          >();
@@ -224,7 +306,11 @@ describe("object", () => {
       });
 
       type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<{ name?: string; age?: number }>();
+      expectTypeOf<Inferred>().toEqualTypeOf<{
+         name?: string;
+         age?: number;
+         [key: string]: unknown;
+      }>();
       assertJson(schema, {
          type: "object",
          properties: {
@@ -400,6 +486,7 @@ describe("object", () => {
          expectTypeOf<Inferred>().toEqualTypeOf<{
             url: string;
             force?: boolean;
+            [key: string]: unknown;
          }>();
          type Coerced = StaticCoerced<typeof s>;
          expectTypeOf<Coerced>().toEqualTypeOf<{

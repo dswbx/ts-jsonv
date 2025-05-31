@@ -3,8 +3,11 @@ import {
    type TSchemaTemplateOptions,
    schema,
    type TCustomSchema,
+   type TCustomType,
+   type TAnySchema,
 } from "../schema";
 import type {
+   Merge,
    OptionalUndefined,
    Simplify,
    Static,
@@ -28,9 +31,10 @@ type ObjectCoerced<T extends TProperties> = Simplify<
    }>
 >;
 
-export interface ObjectSchema extends Omit<Partial<TSchema>, "properties"> {
+export interface ObjectSchema extends TCustomType {
+   $defs?: Record<string, TSchema>;
    patternProperties?: { [key: string]: TSchema };
-   additionalProperties?: TSchema;
+   additionalProperties?: TSchema | false;
    minProperties?: number;
    maxProperties?: number;
    propertyNames?: TSchema;
@@ -38,8 +42,11 @@ export interface ObjectSchema extends Omit<Partial<TSchema>, "properties"> {
 
 export type TObject<
    P extends TProperties,
-   O extends ObjectSchema = ObjectSchema
-> = Omit<TCustomSchema<O, ObjectStatic<P>>, "properties"> & {
+   O extends ObjectSchema = ObjectSchema,
+   Out = O extends { additionalProperties: false }
+      ? ObjectStatic<P>
+      : Merge<ObjectStatic<P> & { [key: string]: unknown }>
+> = Omit<TCustomSchema<O, Out>, "properties"> & {
    properties: P;
    coerce: (value: unknown) => ObjectCoerced<P>;
 };
@@ -61,11 +68,17 @@ export const object = <P extends TProperties, const O extends ObjectSchema>(
       .filter(([, value]) => !($optional in value))
       .map(([key]) => key);
 
+   const additionalProperties =
+      options.additionalProperties === false
+         ? schema(false)
+         : options.additionalProperties;
+
    return schema(
       {
          template,
          coerce,
          ...options,
+         additionalProperties,
          type: "object",
          properties,
          required: required.length > 0 ? required : undefined,
@@ -76,14 +89,14 @@ export const object = <P extends TProperties, const O extends ObjectSchema>(
 
 export const strictObject = <
    P extends TProperties,
-   const O extends ObjectSchema & { additionalProperties?: false }
+   const O extends Omit<ObjectSchema, "additionalProperties">
 >(
    properties: P,
    options: O = {} as O
-): TObject<P, O> => {
+): TObject<P, Merge<O & { additionalProperties: false }>> => {
    return object(properties, {
       ...options,
-      additionalProperties: schema(false),
+      additionalProperties: false,
    }) as any;
 };
 
@@ -97,8 +110,11 @@ type PartialObjectCoerced<T extends TProperties> = {
 
 export type TPartialObject<
    P extends TProperties,
-   O extends ObjectSchema
-> = Omit<TCustomSchema<O, PartialObjectStatic<P>>, "properties"> & {
+   O extends ObjectSchema,
+   Out = O extends { additionalProperties: false }
+      ? PartialObjectStatic<P>
+      : Merge<PartialObjectStatic<P> & { [key: string]: unknown }>
+> = Omit<TCustomSchema<O, Out>, "properties"> & {
    properties: P;
    coerce: (
       value: unknown
@@ -123,26 +139,26 @@ export const partialObject = <
    return object(partial, options) as any;
 };
 
-export interface RecordSchema extends Partial<TSchema> {
+export interface RecordSchema extends TCustomType {
    additionalProperties: never;
 }
 
-type RecordStatic<A extends TSchema> = Record<string, Static<A>>;
+type RecordStatic<AP extends TAnySchema> = Record<string, Static<AP>>;
 
-export type TRecord<A extends TSchema, O extends RecordSchema> = Omit<
-   TCustomSchema<O, RecordStatic<A>>,
+export type TRecord<AP extends TAnySchema, O extends RecordSchema> = Omit<
+   TCustomSchema<O, RecordStatic<AP>>,
    "additionalProperties"
 > & {
-   additionalProperties: A;
+   additionalProperties: AP;
 };
 
 export const record = <
-   const S extends TSchema,
+   const AP extends TAnySchema,
    const O extends RecordSchema
 >(
-   ap: S,
+   ap: AP,
    options: O = {} as O
-): TRecord<S, O> => {
+): TRecord<AP, O> => {
    return schema(
       {
          template,

@@ -33,7 +33,10 @@ describe("schema", () => {
          name: any().optional(),
       });
       type Inferred = Static<typeof schema>;
-      expectTypeOf<Inferred>().toEqualTypeOf<{ name?: any }>();
+      expectTypeOf<Inferred>().toEqualTypeOf<{
+         name?: any;
+         [key: string]: unknown;
+      }>();
       type Coerced = StaticCoerced<typeof schema>;
       expectTypeOf<Coerced>().toEqualTypeOf<{ name?: any }>();
 

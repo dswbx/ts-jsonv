@@ -62,10 +62,12 @@ describe("union", () => {
          | {
               type: "ref/resource";
               uri?: string;
+              [key: string]: unknown;
            }
          | {
               type: "ref/tool";
               name: string;
+              [key: string]: unknown;
            }
       >();
       type AnyOfInferred = Static<typeof schema>;
@@ -74,10 +76,12 @@ describe("union", () => {
          | {
               type: "ref/resource";
               uri?: string;
+              [key: string]: unknown;
            }
          | {
               type: "ref/tool";
               name: string;
+              [key: string]: unknown;
            }
       >();
    });
@@ -104,6 +108,7 @@ describe("union", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<{
          test: string;
          what: string;
+         [key: string]: unknown;
       }>();
 
       //console.log(JSON.stringify(schema, null, 2));
@@ -135,6 +140,7 @@ describe("union", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<{
          bar: number;
          foo: string;
+         [key: string]: unknown;
       }>();
    });
 

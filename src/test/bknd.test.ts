@@ -22,35 +22,40 @@ describe("Field", () => {
    const DEFAULT_FILLABLE = true;
    const DEFAULT_HIDDEN = false;
 
-   const baseFieldConfig = s.partialObject({
-      label: s.string(),
-      description: s.string(),
-      required: s.boolean({ default: DEFAULT_REQUIRED }),
-      virtual: s.boolean({ default: false }),
-      default_value: s.any(),
-      fillable: s.anyOf(
-         [
-            s.boolean({ title: "Boolean", default: DEFAULT_FILLABLE }),
-            s.array(s.string({ enum: ActionContext, title: "Context" }), {
-               uniqueItems: true,
-            }),
-         ],
-         {
-            default: DEFAULT_FILLABLE,
-         }
-      ),
-      hidden: s.anyOf(
-         [
-            s.boolean({ title: "Boolean", default: DEFAULT_HIDDEN }),
-            s.array(s.string({ enum: TmpContext, title: "Context" }), {
-               uniqueItems: true,
-            }),
-         ],
-         {
-            default: DEFAULT_HIDDEN,
-         }
-      ),
-   });
+   const baseFieldConfig = s.partialObject(
+      {
+         label: s.string(),
+         description: s.string(),
+         required: s.boolean({ default: DEFAULT_REQUIRED }),
+         virtual: s.boolean({ default: false }),
+         default_value: s.any(),
+         fillable: s.anyOf(
+            [
+               s.boolean({ title: "Boolean", default: DEFAULT_FILLABLE }),
+               s.array(s.string({ enum: ActionContext, title: "Context" }), {
+                  uniqueItems: true,
+               }),
+            ],
+            {
+               default: DEFAULT_FILLABLE,
+            }
+         ),
+         hidden: s.anyOf(
+            [
+               s.boolean({ title: "Boolean", default: DEFAULT_HIDDEN }),
+               s.array(s.string({ enum: TmpContext, title: "Context" }), {
+                  uniqueItems: true,
+               }),
+            ],
+            {
+               default: DEFAULT_HIDDEN,
+            }
+         ),
+      },
+      {
+         additionalProperties: false,
+      }
+   );
    type InferredBaseFieldConfig = s.Static<typeof baseFieldConfig>;
 
    test("BaseField config", () => {
@@ -102,6 +107,7 @@ describe("Field", () => {
          exclusiveMinimum?: boolean;
          exclusiveMaximum?: boolean;
          multipleOf?: number;
+         [key: string]: unknown;
       }>();
 
       assertJson(schema, {
@@ -122,6 +128,7 @@ describe("Field", () => {
       });
       type CombinedInferred = s.Static<typeof combined>;
       expectTypeOf<CombinedInferred>().toEqualTypeOf<{
+         [key: string]: unknown;
          default_value?: number;
          minimum?: number;
          maximum?: number;
@@ -235,7 +242,7 @@ describe("misc", () => {
       type StringArrayOut = s.StaticCoerced<typeof stringArray>;
       expectTypeOf<StringArrayOut>().toEqualTypeOf<string[]>();
 
-      const sortObj = s.object({
+      const sortObj = s.strictObject({
          by: s.string(),
          dir: s.string({ enum: ["asc", "desc"] }),
       });
@@ -276,6 +283,7 @@ describe("misc", () => {
       });
       type RepoQueryIn = s.Static<typeof repoQuery>;
       expectTypeOf<RepoQueryIn>().toEqualTypeOf<{
+         [key: string]: unknown;
          limit?: number | string;
          offset?: number | string;
          sort?: string | { by: string; dir: "asc" | "desc" };
