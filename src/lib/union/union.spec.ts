@@ -4,7 +4,7 @@ import { $kind } from "../symbols";
 import { allOf, anyOf, oneOf } from "./union";
 import { assertJson } from "../assert";
 import { describe, expect, test } from "bun:test";
-import { string, number, object, array, any, integer } from "../";
+import { string, number, object, array, any, integer, literal } from "../";
 
 describe("union", () => {
    test("anyOf", () => {
@@ -33,6 +33,92 @@ describe("union", () => {
       });
    });
 
+   test("anyOf with objects", () => {
+      const one = object({
+         type: string({ const: "ref/resource" }),
+         uri: string().optional(),
+      });
+      type OneStatic = (typeof one)["static"];
+      //   ^?
+      type OneInferred = Static<typeof one>;
+      //   ^?
+
+      const aobj = array(object({ name: string() }));
+      type AobjStatic = (typeof aobj)["static"];
+      //   ^?
+      type AobjInferred = Static<typeof aobj>;
+      //   ^?
+
+      const schema = anyOf([
+         one,
+         object({
+            type: string({ const: "ref/tool" }),
+            name: string(),
+         }),
+      ]);
+      type AnyOfStatic = (typeof schema)["static"];
+      //   ^?
+      expectTypeOf<AnyOfStatic>().toEqualTypeOf<
+         | {
+              type: "ref/resource";
+              uri?: string;
+              [key: string]: unknown;
+           }
+         | {
+              type: "ref/tool";
+              name: string;
+              [key: string]: unknown;
+           }
+      >();
+      type AnyOfInferred = Static<typeof schema>;
+      //   ^?
+      expectTypeOf<AnyOfInferred>().toEqualTypeOf<
+         | {
+              type: "ref/resource";
+              uri?: string;
+              [key: string]: unknown;
+           }
+         | {
+              type: "ref/tool";
+              name: string;
+              [key: string]: unknown;
+           }
+      >();
+   });
+
+   test("anyOf with objects and literals", () => {
+      const schema = anyOf([
+         literal("ref/resource"),
+         object({ type: string({ const: "ref/tool" }), name: string() }),
+         object({ type: literal("ref/another") }),
+      ]);
+      type Inferred = Static<typeof schema>;
+      expectTypeOf<Inferred>().toEqualTypeOf<
+         | "ref/resource"
+         | { type: "ref/tool"; name: string; [key: string]: unknown }
+         | { type: "ref/another"; [key: string]: unknown }
+      >();
+
+      assertJson(schema, {
+         anyOf: [
+            { const: "ref/resource" },
+            {
+               type: "object",
+               properties: {
+                  type: { const: "ref/tool", type: "string" },
+                  name: { type: "string" },
+               },
+               required: ["type", "name"],
+            },
+            {
+               type: "object",
+               properties: { type: { const: "ref/another" } },
+               required: ["type"],
+            },
+         ],
+      });
+   });
+
    test("oneOf", () => {
       const schema = oneOf([string(), number()]);
       type Inferred = Static<typeof schema>;
@@ -55,6 +141,7 @@ describe("union", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<{
          test: string;
          what: string;
+         [key: string]: unknown;
       }>();
 
       //console.log(JSON.stringify(schema, null, 2));
@@ -86,6 +173,7 @@ describe("union", () => {
       expectTypeOf<Inferred>().toEqualTypeOf<{
          bar: number;
          foo: string;
+         [key: string]: unknown;
       }>();
    });
 

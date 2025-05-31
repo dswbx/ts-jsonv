@@ -1,7 +1,8 @@
-import { schema, type TCustomSchema, type TSchema } from "../schema";
+import { schema, type TCustomSchema, type TCustomType } from "../schema";
+import type { Merge, Simplify } from "../static";
 import { isNumber } from "../utils";
 
-export interface StringSchema extends Partial<TSchema> {
+export interface StringSchema extends TCustomType {
    maxLength?: number;
    minLength?: number;
    pattern?: string;

@@ -1,14 +1,14 @@
-import { $kind, $optional, $raw } from "./symbols";
-import type { Static, StaticCoerced, StaticConstEnum } from "./static";
-import { isBoolean, isObject } from "./utils";
-import { validate } from "./validation/validate";
+import { $kind, $optional, $raw } from "../symbols";
+import type { Static, StaticCoerced, StaticConstEnum } from "../static";
+import { isBoolean, isObject } from "../utils";
+import { validate } from "../validation/validate";
 import type {
    ValidationResult,
    ValidationOptions,
-} from "./validation/validate";
-import { error, valid } from "./utils/details";
-import { coerce, type CoercionOptions } from "./validation/coerce";
-import { Resolver } from "./validation/resolver";
+} from "../validation/validate";
+import { error, valid } from "../utils/details";
+import { coerce, type CoercionOptions } from "../validation/coerce";
+import { Resolver } from "../validation/resolver";
 
 export type PropertyName = string;
 export type JSONSchemaTypeName =
@@ -47,7 +47,7 @@ export interface TOptional<Schema extends TSchema = TSchema> extends TSchema {
    coerce: (v: unknown) => StaticCoerced<Schema> | undefined;
 }
 
-export interface TSchemaBase {
+export interface TJsonSchemaBaseOptions {
    // basic/meta
    $id?: string;
    $ref?: string;
@@ -57,14 +57,21 @@ export interface TSchemaBase {
    default?: any;
    readOnly?: boolean;
    writeOnly?: boolean;
-   $defs?: { [key in PropertyName]: TSchemaBase };
    $comment?: string;
    examples?: any[];
+   enum?: readonly any[] | any[];
+   const?: any;
+}
+
+export interface TCustomType
+   extends TJsonSchemaBaseOptions,
+      Partial<TSchemaFn> {}
+
+export interface TSchemaBase extends TJsonSchemaBaseOptions {
+   $defs?: { [key in PropertyName]: TSchemaBase };
 
    // data types & common
    type?: JSONSchemaTypeName | JSONSchemaTypeName[];
-   enum?: readonly any[] | any[];
-   const?: any;
 
    // string
    maxLength?: number;
@@ -237,17 +244,4 @@ export const schema = <
    };
 
    return s2 as any;
-};
-
-export type TAny<O extends TSchemaBase = TSchemaBase> = TCustomSchema<
-   O,
-   any
-> & {
-   static: any;
-};
-
-export const any = <O extends TSchema>(
-   options: Partial<O> = {} as Partial<O>
-): TAny<O> => {
-   return schema(options as O, "any") as any;
 };

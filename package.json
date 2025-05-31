@@ -3,7 +3,7 @@
    "main": "dist/lib/index.js",
    "module": "dist/lib/index.js",
    "types": "dist/lib/index.d.ts",
-   "version": "0.0.15-alpha.0",
+   "version": "0.1.0",
    "sideEffects": false,
    "description": "A simple, lightweight and dependency-free TypeScript library for defining and validating JSON schemas with static type inference. Includes Hono middleware for validation, OpenAPI generation, and MCP server implementation.",
    "repository": {
@@ -18,7 +18,6 @@
    "scripts": {
       "test:unit": "bun test --bail",
       "types": "tsc --noEmit",
-      "build:types": "tsc --emitDeclarationOnly",
       "test": "bun types && bun test:unit && bun test:spec",
       "test:spec": "clear && bun run src/test/spec/run.ts",
       "build": "tsup",

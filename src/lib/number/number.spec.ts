@@ -13,6 +13,23 @@ describe("number", () => {
       assertJson(number(), { type: "number" });
    });
 
+   test("types", () => {
+      // expect to be fine
+      number({
+         multipleOf: 1,
+         maximum: 1,
+         exclusiveMaximum: 1,
+         minimum: 1,
+         exclusiveMinimum: 1,
+      });
+      // expect fns to work
+      number({ coerce: (v) => 0, validate: (v) => null as any });
+      // @ts-expect-error maxLength is not a valid property for number
+      number({ maxLength: 0 });
+      // @ts-expect-error pattern is not a valid property for number
+      number({ pattern: "" });
+   });
+
    test("options & type inference", () => {
       {
          // @ts-expect-error minimum must be a number

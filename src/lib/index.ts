@@ -5,8 +5,8 @@ export {
    type TSchemaFn,
    type TSchemaInOut,
    schema,
-   any,
 } from "./schema";
+export { any, type TAny, literal, type TLiteral } from "./schema/misc";
 export type { Static, StaticConstEnum, StaticCoerced } from "./static";
 export {
    object,

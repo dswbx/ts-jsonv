@@ -14,6 +14,17 @@ describe("string", () => {
       assertJson(string(), { type: "string" });
    });
 
+   test("types", () => {
+      // expect to be fine
+      string({ maxLength: 1, minLength: 1, pattern: "", format: "" });
+      // expect fns to work
+      string({ coerce: (v) => "", validate: (v) => null as any });
+      // @ts-expect-error minimum is not a valid property for string
+      string({ minimum: 0 });
+      // @ts-expect-error anyOf is not a valid property for string
+      string({ anyOf: [] });
+   });
+
    test("options & type inference", () => {
       {
          // @ts-expect-error maxLength must be a number

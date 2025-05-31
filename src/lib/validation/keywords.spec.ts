@@ -3,9 +3,10 @@ import * as kw from "./keywords";
 import { number } from "../number/number";
 import { boolean } from "../boolean/boolean";
 import { string } from "../string/string";
-import { schema, any } from "../schema";
+import { schema } from "../schema";
+import { any } from "../schema/misc";
 import { fromSchema } from "../schema/from-schema";
-import { object, partialObject } from "../object/object";
+import { partialObject } from "../object/object";
 
 describe("keywords", () => {
    describe("base", () => {
